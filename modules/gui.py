@@ -4129,10 +4129,18 @@ class MainGUI():
             globals.settings.display_mode = new_display_mode
             async_thread.run(db.update_settings("display_mode"))
 
+        # Background processing status, shown right of search bar (reserve space for it)
+        status_text = ""
+        if api.processing_games:
+            names = list(dict.fromkeys(api.processing_games.values()))
+            name = names[0] if len(names) == 1 else f"{names[0]} (+{len(names) - 1} more)"
+            status_text = f"Processing: {name[:37] + '...' if len(name) > 40 else name}"
+        status_reserve = (imgui.calc_text_size(status_text).x + imgui.style.item_spacing.x) if status_text else 0
+
         if self.add_box_valid:
-            imgui.set_next_item_width(-(imgui.calc_text_size("Add!").x + 2 * imgui.style.frame_padding.x) - imgui.style.item_spacing.x)
+            imgui.set_next_item_width(-(imgui.calc_text_size("Add!").x + 2 * imgui.style.frame_padding.x) - imgui.style.item_spacing.x - status_reserve)
         else:
-            imgui.set_next_item_width(-imgui.FLOAT_MIN)
+            imgui.set_next_item_width(-imgui.FLOAT_MIN - status_reserve)
         any_active_old = imgui.is_any_item_active()
         any_active = False
         def setter_extra(_=None):
@@ -4198,6 +4206,10 @@ class MainGUI():
             self.add_box_text = ""
             self.add_box_valid = False
             self.recalculate_ids = True
+        if status_text:
+            imgui.same_line()
+            imgui.align_text_to_frame_padding()
+            imgui.text(status_text)
 
     def draw_sidebar(self):
         set = globals.settings
