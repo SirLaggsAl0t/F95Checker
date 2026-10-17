@@ -802,6 +802,7 @@ async def add_games(*threads: list[ThreadMatch | SearchResult], force_summary=Fa
     async def _add_games():
         dupes = []
         added = []
+        added_games: list[Game] = []
         for thread in threads:
             if thread.id in globals.games:
                 dupes.append(globals.games[thread.id].name)
@@ -810,6 +811,7 @@ async def add_games(*threads: list[ThreadMatch | SearchResult], force_summary=Fa
             await db.load_games(thread.id)
             game = globals.games[thread.id]
             added.append(game.name)
+            added_games.append(game)
             if globals.settings.mark_installed_after_add:
                 game.installed = game.version
             if globals.settings.select_executable_after_add:
@@ -837,6 +839,9 @@ async def add_games(*threads: list[ThreadMatch | SearchResult], force_summary=Fa
                      (("Duplicates:\n - " + "\n - ".join(dupes)) if dupe_count > 0 else "")
             )
         globals.gui.recalculate_ids = True
+        if added_games:
+            # Added games have no image url yet, re-check their threads to fetch cover images
+            utils.start_refresh_task(api.refresh(*added_games, notifs=False), reset_bg_timers=False, notify_new_games=False)
     count = len(threads)
     if globals.settings.select_executable_after_add and count > 1:
         buttons = {
