@@ -16,6 +16,8 @@ from PyQt6.QtNetwork import QNetworkProxy
 
 from common.structs import ChildPipe
 
+user_agent: str = None
+
 # Qt WebEngine doesn't like running alongside other OpenGL
 # applications so we need to run a dedicated multiprocess
 
@@ -287,16 +289,12 @@ def create(
         app.window.controls.buttons.reload.setText("󰅖")
         app.window.controls.progress.setValue(1)
         app.window.controls.progress.repaint()
-        if extension:
-            app.window.webview.page.runJavaScript(extension)
     def load_progress(value: int):
         app.window.controls.buttons.back.setEnabled(app.window.webview.history.canGoBack())
         app.window.controls.buttons.forward.setEnabled(app.window.webview.history.canGoForward())
         app.window.controls.buttons.reload.setText("󰅖")
         app.window.controls.progress.setValue(max(1, value))
         app.window.controls.progress.repaint()
-        if extension:
-            app.window.webview.page.runJavaScript(extension)
     def load_finished(_=None):
         nonlocal loading
         loading = False
@@ -306,7 +304,7 @@ def create(
         app.window.controls.progress.setValue(0)
         app.window.controls.progress.repaint()
         if extension:
-            app.window.webview.page.runJavaScript(extension + "\nupdateIcons();")
+            app.window.webview.page.runJavaScript(extension)
     app.window.webview.loadStarted.connect(load_started)
     app.window.webview.loadProgress.connect(load_progress)
     app.window.webview.loadFinished.connect(load_finished)
@@ -406,14 +404,13 @@ def open(url: str, *, cookies: dict[str, str] = {}, cookies_domain: str = None, 
     app.exec()
 
 
-def cookies(url: str, *, minimal=True, **kwargs):
-    if minimal:
-        kwargs |= dict(
-            buttons=False,
-            extension=False,
-            private=True,
-        )
-    app = create(**kwargs | dict(buttons=False, extension=False, private=True))
+def cookies(url: str, **kwargs):
+    kwargs |= dict(
+        buttons=False,
+        extension=False,
+        private=True,
+    )
+    app = create(**kwargs)
     url = QtCore.QUrl(url)
     def on_cookie_add(cookie: QtNetwork.QNetworkCookie):
         name = cookie.name().data().decode('utf-8')
@@ -500,6 +497,24 @@ def xpath_redirect(url: str, xpath_expression: str = None, *, minimal=True, cook
                 }}
             """)
         app.window.webview.loadProgress.connect(load_progress)
+    app.window.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint, True)
+    app.window.webview.setUrl(url)
+    app.window.show()
+    app.exec()
+
+
+def solve_captcha(url: str, title_search: str, **kwargs):
+    kwargs |= dict(
+        buttons=False,
+        extension=False,
+        private=True,
+    )
+    app = create(**kwargs)
+    url = QtCore.QUrl(url)
+    def title_changed(title: str):
+        if title_search in title:
+            app.window.close()
+    app.window.webview.titleChanged.connect(title_changed)
     app.window.setWindowFlag(QtCore.Qt.WindowType.WindowStaysOnTopHint, True)
     app.window.webview.setUrl(url)
     app.window.show()

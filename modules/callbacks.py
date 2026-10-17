@@ -770,7 +770,7 @@ def convert_custom_to_f95zone(game: Game):
     game.status = Status.Unchecked
 
 
-def remove_game(*games: list[Game], bypass_confirm=False):
+def remove_game(*games: Game, bypass_confirm=False):
     def remove_callback():
         for game in games:
             id = game.id
@@ -841,7 +841,7 @@ async def add_games(*threads: list[ThreadMatch | SearchResult], force_summary=Fa
         globals.gui.recalculate_ids = True
         if added_games:
             # Added games have no image url yet, re-check their threads to fetch cover images
-            utils.start_refresh_task(api.refresh(*added_games, notifs=False), reset_bg_timers=False, notify_new_games=False)
+            utils.start_refresh_task(api.refresh(*added_games, notifs=False), reset_bg_timers=False)
     count = len(threads)
     if globals.settings.select_executable_after_add and count > 1:
         buttons = {

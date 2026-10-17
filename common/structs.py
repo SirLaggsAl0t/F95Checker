@@ -899,6 +899,9 @@ class Settings:
     hide_empty_tabs             : bool
     highlight_tags              : bool
     ignore_semaphore_timeouts   : bool
+    image_decode_gif_max        : int
+    image_decode_threads        : int
+    image_io_threads            : int
     image_timeout               : int
     independent_tab_views       : bool
     insecure_ssl                : bool
