@@ -137,6 +137,31 @@ fast_checks_counter = 0
 full_checks_counter = CounterContext()
 images_counter = CounterContext()
 downloads: dict[str, FileDownload] = {}
+missing_images_interval = 60 * 5
+missing_image_recheck_cooldown = 3 * 3600
+missing_image_rechecks: dict[int, float] = {}
+missing_images_queue: list[Game] = []
+processing_games: dict[int, str] = {}
+
+
+class ProcessingGame:
+    """Track which game is being processed, for the bottom bar status."""
+    __slots__ = ("game",)
+
+    def __init__(self, game: Game):
+        self.game = game
+
+    def __enter__(self):
+        processing_games[self.game.id] = self.game.name
+
+    def __exit__(self, *_):
+        processing_games.pop(self.game.id, None)
+
+    async def __aenter__(self):
+        self.__enter__()
+
+    async def __aexit__(self, *exc):
+        self.__exit__(*exc)
 
 
 def make_session():
@@ -216,10 +241,13 @@ def setup():
 
     make_session()
 
+    scan_loop = async_thread.run(missing_images_loop())
+
     try:
         yield
     finally:
 
+        scan_loop.cancel()
         async_thread.wait(session.close())
         cleanup_temp_files()
 
@@ -547,6 +575,75 @@ def cleanup_temp_files():
         try:
             item.unlink()
         except Exception:
+            pass
+
+
+def plan_missing_image_repairs(games, now: float):
+    """Split games with a missing cover file into direct re-downloads and thread re-checks."""
+    fetch: list[Game] = []
+    recheck: list[Game] = []
+    for game in games:
+        if game.custom or not game.image.missing:
+            continue
+        if game.archived and not globals.settings.refresh_archived_games:
+            continue
+        if (game.image_url or "").startswith("http"):
+            fetch.append(game)
+        elif now - missing_image_rechecks.get(game.id, 0) > missing_image_recheck_cooldown:
+            recheck.append(game)
+    return fetch, recheck
+
+
+def queue_missing_images(games):
+    """Queue games whose cover file is missing for sequential background repair."""
+    queued = {game.id for game in missing_images_queue}
+    for game in games:
+        if game.id in queued:
+            continue
+        if game.image.missing and (game.image_url or "").startswith("http"):
+            missing_images_queue.append(game)
+            queued.add(game.id)
+
+
+async def repair_game(game: Game):
+    with ProcessingGame(game):
+        try:
+            data, url = await download_image(game.image_url)
+        except Exception:
+            return  # Transient failure, next scan re-queues this game
+        await game.set_image_async(data)
+        if url != game.image_url:
+            # Link was marked "dead"/"blocked", stop retrying it directly
+            game.image_url = url
+            await db.update_game(game, "image_url")
+
+
+async def missing_images_loop():
+    next_scan = 0.0
+    while True:
+        await asyncio.sleep(1)
+        try:
+            if globals.gui is None:
+                continue
+            now = time.time()
+            if now >= next_scan:
+                # Initial scan runs as soon as GUI is up, then on every interval
+                next_scan = now + missing_images_interval
+                if not utils.is_refreshing():
+                    fetch, recheck = plan_missing_image_repairs(games=globals.games.values(), now=now)
+                    queue_missing_images(fetch)
+                    if recheck:
+                        for game in recheck:
+                            missing_image_rechecks[game.id] = now
+                        utils.start_refresh_task(refresh(*recheck, notifs=False), reset_bg_timers=False, notify_new_games=False)
+            # Repair queued games one at a time, bottom bar shows each game
+            while missing_images_queue and not utils.is_refreshing():
+                game = missing_images_queue.pop(0)
+                if not game.image.missing:
+                    continue
+                await repair_game(game)
+        except Exception:
+            # Transient network or disk failure, retry next tick
             pass
 
 
@@ -900,7 +997,7 @@ async def fast_check(games: list[Game], full=False):
 
 
 async def full_check(game: Game, last_changed: int):
-    async with full_checks_counter, full_checks_sem:
+    async with full_checks_counter, full_checks_sem, ProcessingGame(game):
 
         async with request("GET", api_full_check_url.format(id=game.id, ts=last_changed), timeout=globals.settings.request_timeout * 2, cookies=False) as (res, req):
             raise_api_error(res)
