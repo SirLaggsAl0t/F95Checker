@@ -11,7 +11,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from app import config
-from app.routes import enums, games, images, labels_tabs, settings
+from app.refresh_job import job
+from app.routes import enums, games, images, labels_tabs, refresh, search, settings
 from common.errors import Exc
 from modules import api, db
 
@@ -30,10 +31,12 @@ async def lifespan(app: FastAPI):
     with api.setup():
         # 4. Background commit loop
         save_task = asyncio.create_task(db.save_loop())
+        job.start()
         try:
             log_urls()
             yield
         finally:
+            await job.stop()
             save_task.cancel()
     # api.setup() can't block on session close in inline mode, close it here
     if api.session and not api.session.closed:
@@ -103,6 +106,8 @@ app.include_router(labels_tabs.router)
 app.include_router(settings.router)
 app.include_router(enums.router)
 app.include_router(images.router)
+app.include_router(refresh.router)
+app.include_router(search.router)
 
 
 def log_urls():
