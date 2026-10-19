@@ -3,8 +3,9 @@ import { ArrowLeft, ExternalLink } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 
 import { apiGet } from '@/api/client'
-import type { GameDetail } from '@/api/types'
+import type { Enums, GameDetail, Label, Settings, Tab } from '@/api/types'
 import { CoverImage } from '@/components/CoverImage'
+import { GameEditPanel } from '@/components/GameEditPanel'
 import { Mdi } from '@/components/Mdi'
 import { formatDate, formatTimeline, isFinished, isInstalled, tagLabel } from '@/lib/format'
 
@@ -34,6 +35,10 @@ export function GameDetailPage() {
     queryFn: () => apiGet<GameDetail>(`/api/games/${id}`),
     enabled: Boolean(id),
   })
+  const labels = useQuery({ queryKey: ['labels'], queryFn: () => apiGet<Label[]>('/api/labels') })
+  const tabs = useQuery({ queryKey: ['tabs'], queryFn: () => apiGet<Tab[]>('/api/tabs') })
+  const settings = useQuery({ queryKey: ['settings'], queryFn: () => apiGet<Settings>('/api/settings') })
+  const enums = useQuery({ queryKey: ['enums'], queryFn: () => apiGet<Enums>('/api/enums') })
 
   if (query.isPending) return <main className="mx-auto max-w-3xl p-4 text-neutral-400">Loading game…</main>
   if (query.isError) {
@@ -85,6 +90,16 @@ export function GameDetailPage() {
           )}
         </div>
       </div>
+
+      <GameEditPanel
+        key={game.id}
+        game={game}
+        labels={labels.data ?? []}
+        tabs={tabs.data ?? []}
+        types={enums.data?.Type ?? []}
+        statuses={enums.data?.Status ?? []}
+        confirmOnRemove={settings.data?.confirm_on_remove ?? true}
+      />
 
       <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Field label="Score">{game.score ? game.score.toFixed(2) : ''}</Field>

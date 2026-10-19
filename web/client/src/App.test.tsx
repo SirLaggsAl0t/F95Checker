@@ -54,7 +54,11 @@ describe('App', () => {
           ? [game]
           : url.startsWith('/api/tabs')
             ? []
-            : url.startsWith('/api/refresh/status')
+            : url.startsWith('/api/labels')
+              ? []
+              : url.startsWith('/api/enums')
+                ? {}
+                : url.startsWith('/api/refresh/status')
               ? { state: 'idle', progress: 0, total: 0, errors: [], missing_threads: [], last_result: null }
               : url.startsWith('/api/settings')
                 ? { default_tab_is_new: false }
@@ -69,6 +73,6 @@ describe('App', () => {
     expect(await screen.findByText('Test Game')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /default/i })).toBeInTheDocument()
     expect(screen.getByText('Update')).toBeInTheDocument()
-    expect(screen.getByText('Installed')).toBeInTheDocument()
+    expect(screen.getAllByText('Installed').length).toBeGreaterThan(0)
   })
 })
