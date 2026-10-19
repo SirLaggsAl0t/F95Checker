@@ -115,3 +115,27 @@ export type Settings = {
 }
 
 export type Enums = Record<string, EnumItem[]>
+
+export type RefreshStatus = {
+  state: 'idle' | 'running'
+  progress: number
+  total: number
+  started: number | null
+  errors: { game_id: number | null; name: string | null; msg: string }[]
+  missing_threads: number[]
+  last_result: { updated: number[]; finished_at: number } | null
+  last_successful_refresh: number
+}
+
+export type AddGamesResponse = {
+  added: GameSummary[]
+  skipped: { id: number; reason: string }[]
+}
+
+export type SearchResult = {
+  id: number
+  title: string
+  creator: string
+  url: string
+  in_list: boolean
+}

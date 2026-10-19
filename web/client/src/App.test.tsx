@@ -54,9 +54,11 @@ describe('App', () => {
           ? [game]
           : url.startsWith('/api/tabs')
             ? []
-            : url.startsWith('/api/settings')
-              ? { default_tab_is_new: false }
-              : {}
+            : url.startsWith('/api/refresh/status')
+              ? { state: 'idle', progress: 0, total: 0, errors: [], missing_threads: [], last_result: null }
+              : url.startsWith('/api/settings')
+                ? { default_tab_is_new: false }
+                : {}
         return { ok: true, json: async () => body }
       }),
     )

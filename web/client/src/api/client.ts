@@ -24,8 +24,7 @@ export function errorFromResponse(status: number, body: unknown): ApiError {
   return new ApiError(status, `Request failed (${status})`)
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path)
+async function checked<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let body: unknown
     try {
@@ -35,5 +34,20 @@ export async function apiGet<T>(path: string): Promise<T> {
     }
     throw errorFromResponse(res.status, body)
   }
+  if (res.status === 204) return undefined as T
   return res.json() as Promise<T>
+}
+
+export async function apiGet<T>(path: string): Promise<T> {
+  return checked<T>(await fetch(path))
+}
+
+export async function apiSend<T>(path: string, method: string, body?: unknown): Promise<T> {
+  return checked<T>(
+    await fetch(path, {
+      method,
+      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  )
 }

@@ -4,8 +4,10 @@ import { useState } from 'react'
 
 import { apiGet } from '@/api/client'
 import type { GameSummary, Settings, Tab } from '@/api/types'
+import { AddGameBar } from '@/components/AddGameBar'
 import { CoverImage } from '@/components/CoverImage'
 import { Mdi } from '@/components/Mdi'
+import { RefreshButton } from '@/components/RefreshButton'
 import { TabIcon } from '@/components/TabIcon'
 import { formatDate, isFinished, isInstalled } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -65,10 +67,15 @@ export function LibraryPage() {
 
   return (
     <main className="mx-auto max-w-4xl p-3 sm:p-6">
-      <header className="mb-4 flex items-center gap-3">
-        <img src="/brand/icon-32.png" alt="" className="size-8" />
-        <h1 className="text-xl font-semibold">F95Checker</h1>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <img src="/brand/icon-32.png" alt="" className="size-8" />
+          <h1 className="text-xl font-semibold">F95Checker</h1>
+        </div>
+        <RefreshButton />
       </header>
+
+      <AddGameBar />
 
       <nav className="mb-4 flex gap-1 overflow-x-auto pb-1" aria-label="Tabs">
         <button
