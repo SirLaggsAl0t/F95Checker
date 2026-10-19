@@ -20,11 +20,13 @@ def test_unknown_api_is_json_404():
         assert res.json() == {"detail": "Not Found"}
 
 
-def test_enums_stub():
+def test_enums():
     with TestClient(app) as client:
         res = client.get("/api/enums")
         assert res.status_code == 200
-        assert res.json() == {}
+        body = res.json()
+        assert {"DisplayMode", "Status", "Tag", "TimelineEventType", "Type", "FilterMode", "MsgBox"} <= body.keys()
+        assert body["Status"][0] == {"value": 1, "name": "Normal", "icon": "lightning_bolt_circle", "color": "#f2f2f2"}
 
 
 def test_auth(monkeypatch):

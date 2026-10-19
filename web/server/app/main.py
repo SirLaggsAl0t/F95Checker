@@ -11,6 +11,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from app import config
+from app.routes import enums, games, images, labels_tabs, settings
+from common.errors import Exc
 from modules import api, db
 
 logger = logging.getLogger("f95web")
@@ -87,10 +89,20 @@ async def health():
     }
 
 
-@app.get("/api/enums")
-async def enums():
-    # Stub, Phase 1 fills this from the vendored common.structs enums
-    return {}
+@app.exception_handler(Exc)
+async def exc_handler(request: Request, exc: Exc):
+    level = exc.level.name if exc.level is not None else None
+    return JSONResponse(
+        {"detail": {"title": exc.title, "msg": exc.msg, "more": exc.more, "level": level}},
+        status_code=400,
+    )
+
+
+app.include_router(games.router)
+app.include_router(labels_tabs.router)
+app.include_router(settings.router)
+app.include_router(enums.router)
+app.include_router(images.router)
 
 
 def log_urls():
