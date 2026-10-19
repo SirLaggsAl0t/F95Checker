@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+/* Same MDI 7.4.47 font the desktop app renders Tab.icon glyphs with. */
+@font-face {
+  font-family: 'Material Design Icons';
+  src: url('/fonts/materialdesignicons-webfont.ttf') format('truetype');
+  font-display: block;
+}
+
+.mdi-glyph {
+  font-family: 'Material Design Icons';
+  font-style: normal;
+  font-weight: normal;
+  display: inline-block;
+}
+
+:root {
+  color-scheme: dark;
+  background: #0a0a0a;
+  color: #f2f2f2;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
