@@ -9,6 +9,7 @@ import { GameEditPanel } from '@/components/GameEditPanel'
 import { Mdi } from '@/components/Mdi'
 import { PreviewGallery } from '@/components/PreviewGallery'
 import { TagHighlightChip } from '@/components/TagChip'
+import { parseChangelog } from '@/lib/changelog'
 import { formatDate, formatTimeline, isFinished, isInstalled, tagLabel } from '@/lib/format'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -134,10 +135,80 @@ export function GameDetailPage() {
 
       <TextBlock title="Notes" text={game.notes} className="mt-5" />
 
-      {game.downloads.length > 0 && (
+      <TextBlock title="Description" text={game.description} className="mt-5" />
+
+      <PreviewGallery gameId={game.id} enabled={settings.data?.previews_enabled ?? false} />
+
+      {game.changelog && (
+        <details className="mt-5 rounded border border-neutral-800">
+          <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Changelog</summary>
+          <div className="flex flex-col gap-3 border-t border-neutral-800 p-3">
+            {parseChangelog(game.changelog).map((section, index) => (
+              <section key={`${section.version}-${index}`} className="overflow-hidden rounded border border-neutral-800">
+                {section.version && (
+                  <h3 className="border-b border-neutral-800 bg-neutral-900/60 px-3 py-1.5 text-sm font-medium text-sky-300">
+                    {section.version}
+                  </h3>
+                )}
+                <ul className="flex flex-col gap-1 p-3 text-sm text-neutral-300">
+                  {section.lines.map((line, lineIndex) => (
+                    <li key={lineIndex} className="flex gap-2">
+                      <span
+                        className={`mt-1.5 size-1.5 shrink-0 rounded-full ${
+                          line.kind === 'add' ? 'bg-emerald-400' : line.kind === 'remove' ? 'bg-red-400' : 'bg-neutral-600'
+                        }`}
+                      />
+                      <span className="whitespace-pre-wrap break-words">{line.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {game.reviews.length > 0 && (
+        <details className="mt-5 rounded border border-neutral-800">
+          <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">
+            Reviews <span className="text-neutral-500">({game.reviews_total})</span>
+          </summary>
+          <ul className="flex flex-col gap-2 border-t border-neutral-800 p-3">
+            {game.reviews.map((review, index) => (
+              <li key={`${review.user}-${index}`} className="rounded border border-neutral-800 p-3 text-sm">
+                <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+                  <span>
+                    {review.user} · ★{review.score}
+                  </span>
+                  <span>{formatDate(review.timestamp)}</span>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap break-words text-neutral-300">{review.message}</p>
+                {review.likes ? <p className="mt-1 text-xs text-neutral-500">{review.likes} likes</p> : null}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {timelineEvents.length > 0 && (
         <section className="mt-5">
-          <h2 className="mb-1 font-medium">Downloads</h2>
-          <div className="flex flex-col gap-1.5">
+          <h2 className="mb-1 font-medium">Timeline</h2>
+          <ul className="flex flex-col gap-1 text-sm">
+            {timelineEvents.map((event, index) => (
+              <li key={`${event.timestamp}-${index}`} className="flex items-start gap-2">
+                <Mdi name={event.type.icon ?? ''} className="mt-0.5 size-4 shrink-0 text-neutral-400" />
+                <span className="flex-1 text-neutral-300">{formatTimeline(event)}</span>
+                <span className="shrink-0 text-xs text-neutral-500">{formatDate(event.timestamp)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {game.downloads.length > 0 && (
+        <details className="mt-5 rounded border border-neutral-800">
+          <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Downloads</summary>
+          <div className="flex flex-col gap-1.5 border-t border-neutral-800 p-3">
             {game.downloads.map((host) => (
               <div key={host.name} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 <span className="text-neutral-400">{host.name}</span>
@@ -161,50 +232,7 @@ export function GameDetailPage() {
               </div>
             ))}
           </div>
-        </section>
-      )}
-
-      <TextBlock title="Description" text={game.description} className="mt-5" />
-
-      <PreviewGallery gameId={game.id} enabled={settings.data?.previews_enabled ?? false} />
-
-      <TextBlock title="Changelog" text={game.changelog} className="mt-5" />
-
-      {game.reviews.length > 0 && (
-        <section className="mt-5">
-          <h2 className="mb-1 font-medium">
-            Reviews <span className="text-sm text-neutral-500">({game.reviews_total})</span>
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {game.reviews.map((review, index) => (
-              <li key={`${review.user}-${index}`} className="rounded border border-neutral-800 p-3 text-sm">
-                <div className="flex items-center justify-between gap-2 text-xs text-neutral-400">
-                  <span>
-                    {review.user} · ★{review.score}
-                  </span>
-                  <span>{formatDate(review.timestamp)}</span>
-                </div>
-                <p className="mt-1 whitespace-pre-wrap break-words text-neutral-300">{review.message}</p>
-                {review.likes ? <p className="mt-1 text-xs text-neutral-500">{review.likes} likes</p> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {timelineEvents.length > 0 && (
-        <section className="mt-5">
-          <h2 className="mb-1 font-medium">Timeline</h2>
-          <ul className="flex flex-col gap-1 text-sm">
-            {timelineEvents.map((event, index) => (
-              <li key={`${event.timestamp}-${index}`} className="flex items-start gap-2">
-                <Mdi name={event.type.icon ?? ''} className="mt-0.5 size-4 shrink-0 text-neutral-400" />
-                <span className="flex-1 text-neutral-300">{formatTimeline(event)}</span>
-                <span className="shrink-0 text-xs text-neutral-500">{formatDate(event.timestamp)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        </details>
       )}
     </main>
   )
