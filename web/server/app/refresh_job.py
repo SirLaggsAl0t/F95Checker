@@ -14,10 +14,19 @@ class RefreshRequest:
     full: bool = False
 
 
+BACKGROUND_CHECK_SECONDS = 60  # how often the background timer is evaluated
+
+
+def background_due(last: float, interval: int, now: float) -> bool:
+    """interval is minutes; 0 disables the automatic refresh."""
+    return interval > 0 and now - last >= interval * 60
+
+
 class RefreshJob:
     def __init__(self):
         self.queue: asyncio.Queue[RefreshRequest] | None = None
         self._task: asyncio.Task | None = None
+        self._bg_task: asyncio.Task | None = None
         self._pending: RefreshRequest | None = None
         self.running = False
         self.started: float | None = None
@@ -28,15 +37,19 @@ class RefreshJob:
     def start(self):
         self.queue = asyncio.Queue()
         self._task = asyncio.create_task(self._worker())
+        self._bg_task = asyncio.create_task(self._background())
 
     async def stop(self):
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
+        for task in (self._task, self._bg_task):
+            if task:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        self._task = None
+        self._bg_task = None
+
 
     def enqueue(self, ids: list[int] | None = None, full: bool = False):
         if ids is not None:
@@ -75,6 +88,21 @@ class RefreshJob:
             finally:
                 self.running = False
                 self.queue.task_done()
+
+    async def _background(self):
+        last = time.monotonic()
+        while True:
+            await asyncio.sleep(BACKGROUND_CHECK_SECONDS)
+            interval = int(getattr(globals.settings, "bg_refresh_interval", 0) or 0)
+            now = time.monotonic()
+            if not background_due(last, interval, now):
+                if interval <= 0:
+                    last = now  # re-enabling starts a fresh interval, not an immediate run
+                continue
+            last = now
+            if self.running or not self.queue.empty():
+                continue
+            self.enqueue()
 
     async def _run(self, request: RefreshRequest):
         games = None

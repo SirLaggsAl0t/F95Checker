@@ -8,8 +8,10 @@ from common.structs import (
     DisplayMode,
     FilterMode,
     MsgBox,
+    ProxyType,
     Status,
     Tag,
+    TagHighlight,
     TimelineEventType,
     Type,
 )
@@ -39,6 +41,16 @@ def enum_ref(value) -> dict:
 
 def all_enums() -> dict:
     result = {}
-    for enum in (DisplayMode, Status, Tag, TimelineEventType, Type, FilterMode, MsgBox):
+    for enum in (
+        DisplayMode,
+        Status,
+        Tag,
+        TagHighlight,
+        TimelineEventType,
+        Type,
+        FilterMode,
+        MsgBox,
+        ProxyType,
+    ):
         result[enum.__name__] = [enum_ref(member) for member in enum]
     return result

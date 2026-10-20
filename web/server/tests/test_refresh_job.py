@@ -4,7 +4,7 @@ import time
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.refresh_job import RefreshJob, job
+from app.refresh_job import RefreshJob, background_due, job
 from modules import globals
 
 
@@ -82,3 +82,9 @@ def test_refresh_queue_merges_pending_adds():
     assert first.full is True
     assert second.ids == [3]
     assert second.full is False
+
+
+def test_background_interval():
+    assert background_due(0, 0, 10_000) is False
+    assert background_due(0, 30, 30 * 60 - 1) is False
+    assert background_due(0, 30, 30 * 60) is True
