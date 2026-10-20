@@ -148,7 +148,15 @@ export function LibraryPage() {
           <img src="/brand/icon-32.png" alt="" className="size-8" />
           <h1 className="text-xl font-semibold">F95Checker</h1>
         </div>
-        <RefreshButton />
+        <div className="flex items-center gap-2">
+          <Link to="/import" className="text-sm text-neutral-400 hover:text-white">
+            Import
+          </Link>
+          <Link to="/account" className="text-sm text-neutral-400 hover:text-white">
+            Account
+          </Link>
+          <RefreshButton />
+        </div>
       </header>
 
       <AddGameBar />

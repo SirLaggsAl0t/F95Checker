@@ -139,3 +139,20 @@ export type SearchResult = {
   url: string
   in_list: boolean
 }
+
+export type AccountStatus = {
+  logged_in: boolean
+  has_cookies: boolean
+}
+
+export type NotifCounts = {
+  alerts: number
+  inbox: number
+  checked_at: number
+}
+
+export type ImportResult = {
+  found: number
+  added: GameSummary[]
+  skipped: { id: number; reason: string }[]
+}
