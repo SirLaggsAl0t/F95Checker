@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 
 import { apiGet, apiSend } from '@/api/client'
 import type { GameSummary, RefreshStatus } from '@/api/types'
+import { onRefreshToast, showRefreshToast, type RefreshToast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
-
-type Toast = { count: number; names: string[] }
 
 export function RefreshButton() {
   const queryClient = useQueryClient()
-  const [toast, setToast] = useState<Toast | null>(null)
+  const [toast, setToast] = useState<RefreshToast | null>(null)
+
+  // Debug menu and any other caller can raise the same completion toast.
+  useEffect(() => onRefreshToast(setToast), [])
   const status = useQuery({
     queryKey: ['refresh'],
     queryFn: () => apiGet<RefreshStatus>('/api/refresh/status'),
@@ -46,7 +48,7 @@ export function RefreshButton() {
       if (updated.length) {
         const games = queryClient.getQueryData<GameSummary[]>(['games']) ?? []
         const names = updated.map((id) => games.find((game) => game.id === id)?.name ?? `#${id}`)
-        setToast({ count: updated.length, names })
+        showRefreshToast({ count: updated.length, names })
       }
     }
     wasRunning.current = running

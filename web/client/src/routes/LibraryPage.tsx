@@ -16,6 +16,7 @@ import { apiGet, apiSend } from '@/api/client'
 import type { Enums, GameSummary, Label, Tab } from '@/api/types'
 import { AddGameBar } from '@/components/AddGameBar'
 import { CoverImage } from '@/components/CoverImage'
+import { DebugMenu } from '@/components/DebugMenu'
 import { FilterSidebar } from '@/components/FilterSidebar'
 import { GameDetail } from '@/components/GameDetail'
 import { Mdi } from '@/components/Mdi'
@@ -282,6 +283,7 @@ export function LibraryPage() {
         <div className="flex items-center gap-3">
           <img src="/brand/icon-32.png" alt="" className="size-8" />
           <h1 className="text-xl font-semibold">F95Checker</h1>
+          {import.meta.env.DEV && <DebugMenu />}
         </div>
 
         <nav className="grid grid-cols-3 gap-1" aria-label="Main">
