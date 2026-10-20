@@ -64,7 +64,7 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
   return (
     <details className="mb-3 rounded border border-neutral-800 bg-neutral-900/40">
       <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Filters and sorting</summary>
-      <div className="grid gap-3 border-t border-neutral-800 p-3 sm:grid-cols-2">
+      <div className="grid gap-3 border-t border-neutral-800 p-3">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-neutral-400">Search</span>
           <input
@@ -143,7 +143,7 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
         </fieldset>
 
         {labels.length > 0 && (
-          <fieldset className="sm:col-span-2">
+          <fieldset>
             <legend className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Labels</legend>
             <div className="flex flex-wrap gap-1.5">
               {labels.map((label) => (

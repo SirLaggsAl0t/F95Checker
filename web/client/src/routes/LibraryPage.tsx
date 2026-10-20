@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowDownUp, ChevronUp, LayoutGrid } from 'lucide-react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { apiGet } from '@/api/client'
@@ -72,15 +72,10 @@ function GameRow({ game, tab, onOpen }: { game: GameSummary; tab?: Tab; onOpen: 
   )
 }
 
-// Full-viewport detail. The title bar stays at the top and collapses the panel.
+// Full-screen overlay. The title bar stays pinned and only the panel scrolls.
 function ExpandedGame({ game, onClose }: { game: GameSummary; onClose: () => void }) {
-  const ref = useRef<HTMLElement>(null)
-  useEffect(() => {
-    ref.current?.scrollIntoView?.({ block: 'start' })
-  }, [])
-
   return (
-    <article ref={ref} className="min-h-dvh rounded-lg border border-neutral-800 bg-neutral-900/60">
+    <article className="fixed inset-0 z-20 overflow-y-auto bg-neutral-950/95 backdrop-blur">
       <button
         type="button"
         onClick={onClose}
@@ -120,6 +115,16 @@ export function LibraryPage() {
   const enums = useQuery({ queryKey: ['enums'], queryFn: () => apiGet<Enums>('/api/enums') })
 
   useEffect(() => savePrefs(prefs), [prefs])
+
+  // Lock the page while the detail overlay is open; only the overlay scrolls.
+  useEffect(() => {
+    if (openId === null) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [openId])
 
   useEffect(() => {
     const onScroll = () => {
@@ -169,102 +174,105 @@ export function LibraryPage() {
   )
 
   return (
-    <main className="mx-auto max-w-5xl p-3 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-3">
+    <div className="flex min-h-dvh flex-col lg:flex-row">
+      <aside className="flex flex-col gap-3 border-neutral-800 p-3 lg:sticky lg:top-0 lg:h-dvh lg:w-72 lg:shrink-0 lg:overflow-y-auto lg:border-r">
         <div className="flex items-center gap-3">
           <img src="/brand/icon-32.png" alt="" className="size-8" />
           <h1 className="text-xl font-semibold">F95Checker</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Link to="/timeline" className="text-sm text-neutral-400 hover:text-white">
+
+        <nav className="flex flex-col gap-1 text-sm" aria-label="Main">
+          <Link to="/timeline" className="text-neutral-400 hover:text-white">
             Timeline
           </Link>
-          <Link to="/import" className="text-sm text-neutral-400 hover:text-white">
+          <Link to="/import" className="text-neutral-400 hover:text-white">
             Import
           </Link>
-          <Link to="/account" className="text-sm text-neutral-400 hover:text-white">
+          <Link to="/account" className="text-neutral-400 hover:text-white">
             Account
           </Link>
-          <Link to="/settings" className="text-sm text-neutral-400 hover:text-white">
+          <Link to="/settings" className="text-neutral-400 hover:text-white">
             Settings
           </Link>
-          <RefreshButton />
-        </div>
-      </header>
+        </nav>
+        <RefreshButton />
 
-      <AddGameBar />
+        <AddGameBar />
 
-      <nav className="mb-3 flex gap-1 overflow-x-auto pb-1" aria-label="Tabs">
-        {tabButton('all', 'All tabs', null)}
-        {tabButton(null, defaultLabel, null)}
-        {tabList.map((tab) => tabButton(tab.id, tab.name || 'Untitled', tab.icon))}
-      </nav>
+        <nav className="flex flex-wrap gap-1" aria-label="Tabs">
+          {tabButton('all', 'All tabs', null)}
+          {tabButton(null, defaultLabel, null)}
+          {tabList.map((tab) => tabButton(tab.id, tab.name || 'Untitled', tab.icon))}
+        </nav>
 
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1 text-sm text-neutral-400">
-          <ArrowDownUp aria-hidden className="size-3.5" />
-          <select
-            aria-label="Sort games"
-            value={sort.key}
-            onChange={(event) => update({ sorts: [{ key: event.target.value as SortKey, dir: sort.dir }] })}
-            className="rounded border border-neutral-700 bg-neutral-900 px-1.5 py-1 text-sm"
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-1 text-sm text-neutral-400">
+            <ArrowDownUp aria-hidden className="size-3.5" />
+            <select
+              aria-label="Sort games"
+              value={sort.key}
+              onChange={(event) => update({ sorts: [{ key: event.target.value as SortKey, dir: sort.dir }] })}
+              className="rounded border border-neutral-700 bg-neutral-900 px-1.5 py-1 text-sm"
+            >
+              {SORTS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            aria-label={sort.dir === 'asc' ? 'Sort descending' : 'Sort ascending'}
+            onClick={() => update({ sorts: [{ ...sort, dir: sort.dir === 'asc' ? 'desc' : 'asc' }] })}
+            className="rounded border border-neutral-700 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-800"
           >
-            {SORTS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          aria-label={sort.dir === 'asc' ? 'Sort descending' : 'Sort ascending'}
-          onClick={() => update({ sorts: [{ ...sort, dir: sort.dir === 'asc' ? 'desc' : 'asc' }] })}
-          className="rounded border border-neutral-700 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-800"
-        >
-          {sort.dir === 'asc' ? 'Ascending' : 'Descending'}
-        </button>
-      </div>
-
-      <FilterSidebar
-        filters={prefs.filters}
-        onChange={setFilters}
-        statuses={enums.data?.Status ?? []}
-        types={enums.data?.Type ?? []}
-        labels={labelList}
-      />
-
-      {games.isPending && <p className="text-neutral-400">Loading library…</p>}
-      {games.isError && <p className="text-red-400">Could not load the library: {games.error.message}</p>}
-      {games.isSuccess && games.data.length === 0 && (
-        <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">The library is empty.</p>
-      )}
-      {games.isSuccess && games.data.length > 0 && visible.length === 0 && (
-        <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">No games match these filters.</p>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {visible.map((game) =>
-          openId === game.id ? (
-            <ExpandedGame key={game.id} game={game} onClose={() => collapse(game.id)} />
-          ) : (
-            <GameRow
-              key={game.id}
-              game={game}
-              tab={tabList.find((tab) => tab.id === game.tab)}
-              onOpen={() => setOpenId(game.id)}
-            />
-          ),
-        )}
-      </div>
-
-      <details className="mt-6 rounded border border-neutral-800">
-        <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Organize tabs and labels</summary>
-        <div className="grid gap-4 border-t border-neutral-800 p-3 sm:grid-cols-2">
-          <TabEditor tabs={tabList} />
-          <LabelEditor labels={labelList} />
+            {sort.dir === 'asc' ? 'Ascending' : 'Descending'}
+          </button>
         </div>
-      </details>
-    </main>
+
+        <FilterSidebar
+          filters={prefs.filters}
+          onChange={setFilters}
+          statuses={enums.data?.Status ?? []}
+          types={enums.data?.Type ?? []}
+          labels={labelList}
+        />
+      </aside>
+
+      <main className="min-w-0 flex-1 p-3 sm:p-6">
+        {games.isPending && <p className="text-neutral-400">Loading library…</p>}
+        {games.isError && <p className="text-red-400">Could not load the library: {games.error.message}</p>}
+        {games.isSuccess && games.data.length === 0 && (
+          <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">The library is empty.</p>
+        )}
+        {games.isSuccess && games.data.length > 0 && visible.length === 0 && (
+          <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">No games match these filters.</p>
+        )}
+
+        <div className="flex flex-col gap-2">
+          {visible.map((game) =>
+            openId === game.id ? (
+              <ExpandedGame key={game.id} game={game} onClose={() => collapse(game.id)} />
+            ) : (
+              <GameRow
+                key={game.id}
+                game={game}
+                tab={tabList.find((tab) => tab.id === game.tab)}
+                onOpen={() => setOpenId(game.id)}
+              />
+            ),
+          )}
+        </div>
+
+        <details className="mt-6 rounded border border-neutral-800">
+          <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Organize tabs and labels</summary>
+          <div className="grid gap-4 border-t border-neutral-800 p-3 sm:grid-cols-2">
+            <TabEditor tabs={tabList} />
+            <LabelEditor labels={labelList} />
+          </div>
+        </details>
+      </main>
+    </div>
   )
 }
