@@ -1,4 +1,4 @@
-# Start the F95Checker Vite client in the foreground. Ctrl+C stops it.
+# Rebuild the F95Checker client, then start the Vite dev server. Ctrl+C stops it.
 $ErrorActionPreference = 'Stop'
 $client = Join-Path $PSScriptRoot 'client'
 $vite = Join-Path $client 'node_modules\.bin\vite.cmd'
@@ -9,4 +9,9 @@ if (-not (Test-Path $vite)) {
 }
 
 Set-Location $client
+& corepack pnpm 'run' 'build'
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
 & $vite --port 5173 --strictPort
