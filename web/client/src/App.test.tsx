@@ -23,6 +23,7 @@ const game = {
   installed: 'True',
   updated: true,
   archived: false,
+  favourite: true,
   labels: [],
   tab: null,
   image_url: '',
@@ -68,10 +69,10 @@ describe('App', () => {
     )
   })
 
-  it('renders the default tab and its games', async () => {
+  it('renders the favourites tab and its games', async () => {
     renderApp()
     expect(await screen.findByText('Test Game')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /default/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Favourites' })).toBeInTheDocument()
     expect(screen.getByText('Update')).toBeInTheDocument()
     expect(screen.getAllByText('Installed').length).toBeGreaterThan(0)
   })

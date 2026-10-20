@@ -29,7 +29,7 @@ function Select<T extends string>({
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value as T)}
-        className="rounded border border-neutral-700 bg-neutral-900 px-1.5 py-1 text-sm"
+        className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -58,13 +58,22 @@ function Check({
   )
 }
 
+function Section({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <section className="grid gap-1.5 border-t border-neutral-800 pt-2">
+      {title && <h3 className="text-xs uppercase tracking-wide text-neutral-500">{title}</h3>}
+      {children}
+    </section>
+  )
+}
+
 export function FilterSidebar({ filters, onChange, statuses, types, labels }: Props) {
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch })
 
   return (
-    <details className="mb-3 rounded border border-neutral-800 bg-neutral-900/40">
+    <details className="rounded border border-neutral-800 bg-neutral-900/40">
       <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Filters and sorting</summary>
-      <div className="grid gap-3 border-t border-neutral-800 p-3">
+      <div className="grid gap-2 border-t border-neutral-800 p-3">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-neutral-400">Search</span>
           <input
@@ -76,7 +85,7 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
           />
         </label>
 
-        <div className="grid gap-1.5">
+        <Section>
           <Select
             label="Archived"
             value={filters.archived}
@@ -107,10 +116,9 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
               { value: 'no', label: 'No' },
             ]}
           />
-        </div>
+        </Section>
 
-        <fieldset>
-          <legend className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Status</legend>
+        <Section title="Status">
           <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
             {statuses.map((status) => (
               <Check
@@ -122,10 +130,9 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
               </Check>
             ))}
           </div>
-        </fieldset>
+        </Section>
 
-        <fieldset>
-          <legend className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Type</legend>
+        <Section title="Type">
           <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
             {types.map((type) => (
               <Check
@@ -133,18 +140,15 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
                 checked={filters.type.includes(type.value)}
                 onChange={() => set({ type: toggleValue(filters.type, type.value) })}
               >
-                <span style={{ color: type.color || undefined }}>
-                  {type.name}
-                </span>
+                <span style={{ color: type.color || undefined }}>{type.name}</span>
                 <span className="text-xs text-neutral-500">{type.category}</span>
               </Check>
             ))}
           </div>
-        </fieldset>
+        </Section>
 
         {labels.length > 0 && (
-          <fieldset>
-            <legend className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Labels</legend>
+          <Section title="Labels">
             <div className="flex flex-wrap gap-1.5">
               {labels.map((label) => (
                 <button
@@ -164,7 +168,7 @@ export function FilterSidebar({ filters, onChange, statuses, types, labels }: Pr
                 </button>
               ))}
             </div>
-          </fieldset>
+          </Section>
         )}
       </div>
     </details>

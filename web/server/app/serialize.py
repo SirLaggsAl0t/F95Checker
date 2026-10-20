@@ -27,6 +27,7 @@ def game_summary(game) -> dict:
         "installed": game.installed,
         "updated": game.updated,
         "archived": game.archived,
+        "favourite": bool(game.favourite),
         "labels": [label.id for label in game.labels],
         "tab": game.tab.id if game.tab else None,
         "image_url": game.image_url,

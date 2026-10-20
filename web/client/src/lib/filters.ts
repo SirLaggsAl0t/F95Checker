@@ -2,12 +2,13 @@ import type { GameSummary } from '@/api/types'
 
 export type Tri = 'any' | 'yes' | 'no'
 export type ArchivedFilter = 'show' | 'hide' | 'only'
+export type TabFilter = 'all' | 'favourites' | number
 export type SortKey = 'name' | 'developer' | 'added_on' | 'last_updated' | 'score' | 'rating' | 'votes'
 export type Sort = { key: SortKey; dir: 'asc' | 'desc' }
 
 export type Filters = {
   query: string
-  tab: 'all' | number | null
+  tab: TabFilter
   status: number[]
   type: number[]
   labels: number[]
@@ -21,14 +22,14 @@ export type LibraryPrefs = {
   filters: Filters
 }
 
-const STORAGE_KEY = 'f95checker.library'
+const STORAGE_KEY = 'f95checker.library.v2'
 
 export function defaultPrefs(): LibraryPrefs {
   return {
     sorts: [{ key: 'name', dir: 'asc' }],
     filters: {
       query: '',
-      tab: 'all',
+      tab: 'favourites',
       status: [],
       type: [],
       labels: [],
@@ -48,7 +49,8 @@ function triMatches(value: string, want: Tri): boolean {
 export function applyFilters(games: GameSummary[], filters: Filters): GameSummary[] {
   const needle = filters.query.trim().toLowerCase()
   return games.filter((game) => {
-    if (filters.tab !== 'all' && game.tab !== filters.tab) return false
+    if (filters.tab === 'favourites' && !game.favourite) return false
+    if (filters.tab !== 'all' && filters.tab !== 'favourites' && game.tab !== filters.tab) return false
     if (filters.archived === 'hide' && game.archived) return false
     if (filters.archived === 'only' && !game.archived) return false
     if (filters.status.length && !filters.status.includes(game.status?.value)) return false
@@ -90,6 +92,10 @@ export function toggleValue(list: number[], value: number): number[] {
   return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
 }
 
+function isTab(value: unknown): value is TabFilter {
+  return value === 'all' || value === 'favourites' || typeof value === 'number'
+}
+
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>
 
 function isSort(value: unknown): value is Sort {
@@ -106,6 +112,7 @@ export function loadPrefs(storage?: StorageLike): LibraryPrefs {
     if (!raw) return fallback
     const stored = JSON.parse(raw) as Partial<LibraryPrefs>
     const filters = { ...fallback.filters, ...(stored.filters ?? {}) }
+    if (!isTab(filters.tab)) filters.tab = fallback.filters.tab
     return {
       sorts: Array.isArray(stored.sorts) && stored.sorts.length && stored.sorts.every(isSort)
         ? stored.sorts

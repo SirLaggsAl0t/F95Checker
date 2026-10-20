@@ -990,6 +990,7 @@ class Game:
     installed          : str
     updated            : bool | None
     archived           : bool
+    favourite          : bool
     executables        : list[str]
     launch_wrapper     : dict[Os, str]
     description        : str

@@ -27,6 +27,7 @@ export type GameSummary = {
   installed: string
   updated: boolean | null
   archived: boolean
+  favourite: boolean
   labels: number[]
   tab: number | null
   image_url: string
@@ -50,10 +51,6 @@ export type TimelineEvent = {
   timestamp: number
   arguments: string[]
   type: EnumItem
-}
-
-export type TimelineEntry = TimelineEvent & {
-  game_name: string
 }
 
 export type Preview = {

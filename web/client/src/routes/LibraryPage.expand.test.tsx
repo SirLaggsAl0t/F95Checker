@@ -23,6 +23,7 @@ const game = {
   installed: 'True',
   updated: true,
   archived: false,
+  favourite: true,
   labels: [],
   tab: null,
   image_url: '',
@@ -89,7 +90,7 @@ describe('LibraryPage inline details', () => {
     fireEvent.click(await screen.findByText('Test Game'))
 
     expect(await screen.findByText('A test game.')).toBeInTheDocument()
-    const title = screen.getByRole('button', { name: /Test Game/ })
+    const title = screen.getByRole('button', { name: 'Test Game' })
     expect(title).toHaveAttribute('aria-expanded')
 
     fireEvent.click(title)

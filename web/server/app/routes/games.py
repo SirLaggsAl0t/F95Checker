@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/games", tags=["games"])
 
 EDITABLE = {
     "name", "version", "developer", "type", "status", "rating", "notes",
-    "installed", "finished", "archived", "updated", "tab", "labels",
+    "installed", "finished", "archived", "updated", "favourite", "tab", "labels",
 }
 
 
@@ -58,7 +58,7 @@ def validate_patch(payload: dict) -> dict:
         elif key in ("installed", "finished"):
             if not isinstance(value, str):
                 bad_request(f"{key} must be a string")
-        elif key in ("archived", "updated"):
+        elif key in ("archived", "updated", "favourite"):
             if not isinstance(value, bool):
                 bad_request(f"{key} must be a boolean")
         elif key == "tab":

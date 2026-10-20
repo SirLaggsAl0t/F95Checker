@@ -27,6 +27,7 @@ def make_game():
         installed="True",
         updated=False,
         archived=False,
+        favourite=False,
         executables=[],
         launch_wrapper={},
         description="desc",
@@ -59,6 +60,7 @@ def test_summary_shape_and_enums(monkeypatch):
     assert summary["tags"][1] == {"value": 104, "name": "romance", "text": "romance"}
     assert summary["labels"] == [2, 1]
     assert summary["tab"] == 3
+    assert summary["favourite"] is False
     assert summary["added_on"] == 1_700_000_000
     assert summary["has_image"] is True
     assert summary["image_version"] == "mtime-size"

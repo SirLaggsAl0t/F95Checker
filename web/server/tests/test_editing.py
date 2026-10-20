@@ -49,6 +49,7 @@ def test_patch_round_trip_persists(monkeypatch):
                 "notes": "Some notes",
                 "installed": "2.0",
                 "archived": True,
+                "favourite": True,
                 "labels": [label["id"]],
                 "tab": tab["id"],
             })
@@ -67,6 +68,7 @@ def test_patch_round_trip_persists(monkeypatch):
             assert stored["updated"] == 0
             assert stored["rating"] == 4
             assert stored["archived"] == 1
+            assert stored["favourite"] == 1
             assert stored["labels"] == f"[{label['id']}]"
             assert stored["tab"] == tab["id"]
 
@@ -85,6 +87,7 @@ def test_patch_round_trip_persists(monkeypatch):
                 {"rating": 6},
                 {"labels": [999]},
                 {"archived": "yes"},
+                {"favourite": "yes"},
             ):
                 assert client.patch(f"/api/games/{game_id}", json=bad).status_code == 400, bad
         finally:

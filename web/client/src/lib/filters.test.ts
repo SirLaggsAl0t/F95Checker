@@ -29,6 +29,7 @@ function game(overrides: Partial<GameSummary> = {}): GameSummary {
     installed: '',
     updated: false,
     archived: false,
+    favourite: false,
     labels: [],
     tab: null,
     image_url: '',
@@ -42,21 +43,21 @@ function game(overrides: Partial<GameSummary> = {}): GameSummary {
 }
 
 const library = [
-  game({ id: 1, name: 'Beta', developer: 'Ann', score: 4, rating: 2, labels: [1, 2], tab: null }),
+  game({ id: 1, name: 'Beta', developer: 'Ann', score: 4, rating: 2, labels: [1, 2], tab: null, favourite: true }),
   game({ id: 2, name: 'Alpha', developer: 'Bob', score: 5, rating: 5, installed: 'True', tab: 7 }),
-  game({ id: 3, name: 'Gamma', developer: 'Ann', score: 5, rating: 0, archived: true, labels: [1], tab: 9 }),
+  game({ id: 3, name: 'Gamma', developer: 'Ann', score: 5, rating: 0, archived: true, labels: [1], tab: 9, favourite: true }),
 ]
 
 describe('applyFilters', () => {
-  it('keeps everything by default', () => {
+  it('shows favourites by default', () => {
     const filters = defaultPrefs().filters
-    expect(applyFilters(library, filters).map((item) => item.id)).toEqual([1, 2, 3])
+    expect(applyFilters(library, filters).map((item) => item.id)).toEqual([1, 3])
   })
 
   it('filters by text, tab, labels and state', () => {
-    const filters = defaultPrefs().filters
+    const filters = { ...defaultPrefs().filters, tab: 'all' as const }
+    expect(applyFilters(library, filters).map((item) => item.id)).toEqual([1, 2, 3])
     expect(applyFilters(library, { ...filters, query: 'ann' }).map((item) => item.id)).toEqual([1, 3])
-    expect(applyFilters(library, { ...filters, tab: null }).map((item) => item.id)).toEqual([1])
     expect(applyFilters(library, { ...filters, tab: 7 }).map((item) => item.id)).toEqual([2])
     expect(applyFilters(library, { ...filters, labels: [1, 2] }).map((item) => item.id)).toEqual([1])
     expect(applyFilters(library, { ...filters, installed: 'yes' }).map((item) => item.id)).toEqual([2])

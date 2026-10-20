@@ -57,14 +57,14 @@ export function RefreshButton() {
   const lastRefresh = status.data?.last_successful_refresh
 
   return (
-    <div className="flex flex-col items-end gap-1 text-right">
+    <div className="flex flex-col gap-1">
       <button
         type="button"
         onClick={() => start.mutate()}
         disabled={running || start.isPending}
         aria-label={running ? 'Refresh running' : 'Refresh library'}
         className={cn(
-          'flex items-center gap-1.5 rounded border border-neutral-700 px-2.5 py-1.5 text-sm',
+          'flex items-center justify-center gap-1.5 rounded border border-neutral-700 px-2.5 py-1.5 text-sm',
           running ? 'text-neutral-400' : 'text-neutral-200 hover:bg-neutral-800',
         )}
       >

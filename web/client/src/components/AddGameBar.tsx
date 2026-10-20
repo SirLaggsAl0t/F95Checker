@@ -48,7 +48,7 @@ export function AddGameBar() {
   const error = add.error ?? search.error
 
   return (
-    <form onSubmit={submit} className="mb-3">
+    <form onSubmit={submit}>
       <div className="flex gap-1.5">
         <input
           value={text}

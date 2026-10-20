@@ -42,6 +42,7 @@ def test_game_detail_and_labels():
             installed="",
             updated=False,
             archived=False,
+            favourite=False,
             executables=[],
             launch_wrapper={},
             description="",
