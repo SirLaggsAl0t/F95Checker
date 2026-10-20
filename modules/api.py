@@ -77,7 +77,7 @@ f95_notif_endpoint      = f95_host + "/conversations/popup?_xfResponseType=json"
 f95_alerts_page         = f95_host + "/account/alerts/"
 f95_inbox_page          = f95_host + "/conversations/"
 f95_threads_page        = f95_host + "/threads/"
-f95_bookmarks_page      = f95_host + "/account/bookmarks?difference=0&page={page}"
+f95_bookmarks_page      = f95_host + "/watched/threads?tab=bookmarks&bm=games&page={page}"
 f95_watched_page        = f95_host + "/watched/threads?unread=0&page={page}"
 f95_latest_endpoint     = f95_host + "/sam/latest_alpha/latest_data.php?cmd={cmd}&cat={cat}&page={page}&{search}={query}&sort={sort}&rows={rows}&_={ts}"
 f95_ddl_endpoint        = f95_host + "/sam/dddl.php"
@@ -880,20 +880,20 @@ async def import_f95_bookmarks():
     if not await assert_login():
         return
     globals.refresh_progress = 1
-    page = 0
+    page = 1
     threads = []
     while True:
         globals.refresh_total += 1
         res = await fetch("GET", f95_bookmarks_page.format(page=page))
         raise_f95zone_error(res)
         html = parser.html(res)
-        bookmarks = html.find(parser.is_class("p-body-pageContent")).find(parser.is_class("listPlain"))
+        bookmarks = html.find(parser.is_class("p-body-pageContent")).find(parser.is_class("structItemContainer"))
         globals.refresh_progress += 1
         if not bookmarks:
             break
         page += 1
-        for title in bookmarks.find_all(parser.is_class("contentRow-title")):
-            threads += utils.extract_thread_matches(title.find("a").get("href"))
+        for title in bookmarks.find_all(parser.is_class("structItem-title")):
+            threads += utils.extract_thread_matches(title.get("uix-data-href"))
     if threads:
         await callbacks.add_games(*threads, force_summary=True)
     else:
