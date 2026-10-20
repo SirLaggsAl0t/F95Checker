@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ExternalLink } from 'lucide-react'
 
-import { apiGet } from '@/api/client'
+import { apiGet, apiSend } from '@/api/client'
 import type { Enums, GameDetail as GameDetailData, Label, Settings, Tab } from '@/api/types'
 import { CoverImage } from '@/components/CoverImage'
 import { GameEditPanel } from '@/components/GameEditPanel'
@@ -31,6 +31,7 @@ function TextBlock({ title, text, className }: { title: string; text: string; cl
 }
 
 export function GameDetail({ id, showHeading = true }: { id: number; showHeading?: boolean }) {
+  const queryClient = useQueryClient()
   const query = useQuery({
     queryKey: ['game', String(id)],
     queryFn: () => apiGet<GameDetailData>(`/api/games/${id}`),
@@ -40,6 +41,14 @@ export function GameDetail({ id, showHeading = true }: { id: number; showHeading
   const tabs = useQuery({ queryKey: ['tabs'], queryFn: () => apiGet<Tab[]>('/api/tabs') })
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => apiGet<Settings>('/api/settings') })
   const enums = useQuery({ queryKey: ['enums'], queryFn: () => apiGet<Enums>('/api/enums') })
+
+  const dismissUpdate = useMutation({
+    mutationFn: () => apiSend<GameDetailData>(`/api/games/${id}`, 'PATCH', { updated: false }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['game', String(id)] })
+      queryClient.invalidateQueries({ queryKey: ['games'] })
+    },
+  })
 
   if (query.isPending) return <p className="p-4 text-neutral-400">Loading game…</p>
   if (query.isError) return <p className="p-4 text-red-400">Could not load this game: {query.error.message}</p>
@@ -65,7 +74,19 @@ export function GameDetail({ id, showHeading = true }: { id: number; showHeading
             </span>
             {isInstalled(game.installed) && <span className="text-xs text-emerald-300">Installed</span>}
             {isFinished(game.finished) && <span className="text-xs text-sky-300">Finished</span>}
-            {game.updated && <span className="text-xs text-amber-300">Update available</span>}
+            {game.updated && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-300">
+                Update available
+                <button
+                  type="button"
+                  onClick={() => dismissUpdate.mutate()}
+                  disabled={dismissUpdate.isPending}
+                  className="rounded border border-amber-800 px-1.5 py-0.5 hover:bg-amber-950/40 disabled:opacity-50"
+                >
+                  Mark viewed
+                </button>
+              </span>
+            )}
             {game.archived && <span className="text-xs text-neutral-400">Archived</span>}
           </div>
           {game.url && (

@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bell, Mail, LogOut } from 'lucide-react'
+import { Bell, Mail, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { apiGet, apiSend } from '@/api/client'
 import type { AccountStatus, BrowserLoginStatus, NotifCounts } from '@/api/types'
+import { Panel } from '@/components/Panel'
 import { formatDate } from '@/lib/format'
 
-export function AccountPage() {
+export function AccountPage({ onClose }: { onClose?: () => void } = {}) {
   const queryClient = useQueryClient()
   const [text, setText] = useState('')
   const [userAgent, setUserAgent] = useState('')
@@ -63,13 +63,7 @@ export function AccountPage() {
   }, [browser.data?.state, queryClient])
 
   return (
-    <main className="mx-auto max-w-2xl p-3 sm:p-6">
-      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-white">
-        <ArrowLeft aria-hidden className="size-4" /> Library
-      </Link>
-
-      <h1 className="mb-1 text-xl font-semibold">F95zone account</h1>
-
+    <Panel title="F95zone account" onClose={onClose}>
       {status.isPending && <p className="text-sm text-neutral-400">Checking login…</p>}
       {status.isError && <p className="text-sm text-red-400">Could not check login: {status.error.message}</p>}
       {status.isSuccess && (
@@ -183,6 +177,6 @@ export function AccountPage() {
           Cookies stay on this server and are sent to F95zone over plain HTTP only if you entered the site that way.
         </p>
       </section>
-    </main>
+    </Panel>
   )
 }

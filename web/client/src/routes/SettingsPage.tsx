@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { apiGet, apiSend } from '@/api/client'
 import type { Enums, GameSummary, Settings } from '@/api/types'
+import { Panel } from '@/components/Panel'
 import { THEME_PRESETS } from '@/lib/theme'
 
 function Toggle({
@@ -24,7 +23,7 @@ function Toggle({
   )
 }
 
-export function SettingsPage() {
+export function SettingsPage({ onClose }: { onClose?: () => void } = {}) {
   const queryClient = useQueryClient()
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => apiGet<Settings>('/api/settings') })
   const enums = useQuery({ queryKey: ['enums'], queryFn: () => apiGet<Enums>('/api/enums') })
@@ -50,13 +49,13 @@ export function SettingsPage() {
 
   if (!form) {
     return (
-      <main className="mx-auto max-w-3xl p-3 sm:p-6">
+      <Panel title="Settings" onClose={onClose}>
         {settings.isError ? (
           <p className="text-red-400">Could not load settings: {settings.error.message}</p>
         ) : (
           <p className="text-neutral-400">Loading settings…</p>
         )}
-      </main>
+      </Panel>
     )
   }
 
@@ -71,12 +70,7 @@ export function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-3 sm:p-6">
-      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-white">
-        <ArrowLeft aria-hidden className="size-4" /> Library
-      </Link>
-      <h1 className="mb-4 text-xl font-semibold">Settings</h1>
-
+    <Panel title="Settings" onClose={onClose}>
       <form
         className="flex flex-col gap-4"
         onSubmit={(event) => {
@@ -285,6 +279,6 @@ export function SettingsPage() {
           {save.isError && <span className="text-xs text-red-400">{save.error.message}</span>}
         </div>
       </form>
-    </main>
+    </Panel>
   )
 }

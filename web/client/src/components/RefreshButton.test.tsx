@@ -34,4 +34,31 @@ describe('RefreshButton', () => {
     expect(screen.getByText('Missing threads: 9')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /refresh library/i })).toBeEnabled()
   })
+
+  it('starts a refresh automatically once the idle status loads', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        state: 'idle',
+        progress: 0,
+        total: 0,
+        errors: [],
+        missing_threads: [],
+        last_result: null,
+      }),
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <RefreshButton />
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByRole('button', { name: /refresh library/i })).toBeEnabled()
+    await vi.waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/refresh', expect.objectContaining({ method: 'POST' })),
+    )
+  })
 })

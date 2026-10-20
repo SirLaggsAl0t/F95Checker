@@ -1,15 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { apiSend } from '@/api/client'
 import type { ImportResult } from '@/api/types'
+import { Panel } from '@/components/Panel'
 
 const buttonClass =
   'rounded border border-neutral-700 px-2.5 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800 disabled:text-neutral-500'
 
-export function ImportPage() {
+export function ImportPage({ onClose }: { onClose?: () => void } = {}) {
   const queryClient = useQueryClient()
   const [text, setText] = useState('')
   const [summary, setSummary] = useState<ImportResult | null>(null)
@@ -32,13 +32,7 @@ export function ImportPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-3 sm:p-6">
-      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-white">
-        <ArrowLeft aria-hidden className="size-4" /> Library
-      </Link>
-
-      <h1 className="mb-4 text-xl font-semibold">Import games</h1>
-
+    <Panel title="Import games" onClose={onClose}>
       <section className="mb-4 rounded border border-neutral-800 p-3">
         <h2 className="mb-1 font-medium">Paste thread links</h2>
         <p className="mb-2 text-sm text-neutral-400">
@@ -132,6 +126,6 @@ export function ImportPage() {
           <p className="mt-2 text-xs text-neutral-500">Added games are queued for a background refresh.</p>
         </section>
       )}
-    </main>
+    </Panel>
   )
 }

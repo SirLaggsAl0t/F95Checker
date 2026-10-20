@@ -11,7 +11,6 @@ import {
   User,
 } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { NavLink } from 'react-router-dom'
 
 import { apiGet, apiSend } from '@/api/client'
 import type { Enums, GameSummary, Label, Tab } from '@/api/types'
@@ -26,6 +25,9 @@ import type { LibraryPrefs, SortKey, TabFilter } from '@/lib/filters'
 import { applyFilters, applySorts, loadPrefs, savePrefs } from '@/lib/filters'
 import { formatDate, isFinished, isInstalled } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { AccountPage } from '@/routes/AccountPage'
+import { ImportPage } from '@/routes/ImportPage'
+import { SettingsPage } from '@/routes/SettingsPage'
 
 function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
@@ -38,7 +40,6 @@ function GameBadges({ game }: { game: GameSummary }) {
     <>
       {isInstalled(game.installed) && <Badge className="bg-emerald-900/60 text-emerald-300">Installed</Badge>}
       {isFinished(game.finished) && <Badge className="bg-sky-900/60 text-sky-300">Finished</Badge>}
-      {game.updated && <Badge className="bg-amber-900/60 text-amber-300">Update</Badge>}
       {game.archived && <Badge className="bg-neutral-800 text-neutral-400">Archived</Badge>}
     </>
   )
@@ -75,13 +76,17 @@ function GameRow({
   tab,
   onOpen,
   onToggleFavourite,
+  onDismissUpdate,
   favouritePending,
+  updatePending,
 }: {
   game: GameSummary
   tab?: Tab
   onOpen: () => void
   onToggleFavourite: () => void
+  onDismissUpdate: () => void
   favouritePending: boolean
+  updatePending: boolean
 }) {
   return (
     <div
@@ -118,37 +123,38 @@ function GameRow({
           </div>
         </div>
       </button>
-      <FavouriteButton game={game} onToggle={onToggleFavourite} disabled={favouritePending} />
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        {game.updated && (
+          <button
+            type="button"
+            onClick={onDismissUpdate}
+            disabled={updatePending}
+            aria-label={`Mark ${game.name} update as viewed`}
+            title="Mark update as viewed"
+            className="mt-2 rounded bg-amber-900/60 px-1.5 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-amber-900 disabled:opacity-50"
+          >
+            Update
+          </button>
+        )}
+        <FavouriteButton game={game} onToggle={onToggleFavourite} disabled={favouritePending} />
+      </div>
     </div>
   )
 }
 
 // Full-screen overlay. The title bar stays pinned and only the panel scrolls.
-function ExpandedGame({
-  game,
-  onClose,
-  onToggleFavourite,
-  favouritePending,
-}: {
-  game: GameSummary
-  onClose: () => void
-  onToggleFavourite: () => void
-  favouritePending: boolean
-}) {
+function ExpandedGame({ game, onClose }: { game: GameSummary; onClose: () => void }) {
   return (
     <article className="fixed inset-0 z-20 overflow-y-auto bg-neutral-950/95 backdrop-blur">
-      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-neutral-800 bg-neutral-900/95 backdrop-blur">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-expanded
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2.5 text-left hover:text-white"
-        >
-          <h2 className="truncate font-medium">{game.name}</h2>
-          <ChevronUp aria-hidden className="size-4 shrink-0 text-neutral-400" />
-        </button>
-        <FavouriteButton game={game} onToggle={onToggleFavourite} disabled={favouritePending} />
-      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-expanded
+        className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 border-b border-neutral-800 bg-neutral-900/95 px-3 py-2.5 text-left backdrop-blur hover:text-white"
+      >
+        <h2 className="truncate font-medium">{game.name}</h2>
+        <ChevronUp aria-hidden className="size-4 shrink-0 text-neutral-400" />
+      </button>
       <div className="mx-auto max-w-3xl p-4 sm:p-6">
         <GameDetail id={game.id} showHeading={false} />
       </div>
@@ -169,15 +175,18 @@ const SORTS: { value: SortKey; label: string }[] = [
 ]
 
 const NAV = [
-  { to: '/import', label: 'Import', Icon: Upload },
-  { to: '/account', label: 'Account', Icon: User },
-  { to: '/settings', label: 'Settings', Icon: SettingsIcon },
-]
+  { key: 'import', label: 'Import', Icon: Upload },
+  { key: 'account', label: 'Account', Icon: User },
+  { key: 'settings', label: 'Settings', Icon: SettingsIcon },
+] as const
+
+type PanelKey = (typeof NAV)[number]['key']
 
 export function LibraryPage() {
   const queryClient = useQueryClient()
   const [prefs, setPrefs] = useState<LibraryPrefs>(() => loadPrefs())
   const [openId, setOpenId] = useState<number | null>(null)
+  const [panel, setPanel] = useState<PanelKey | null>(null)
 
   const games = useQuery({ queryKey: ['games'], queryFn: () => apiGet<GameSummary[]>('/api/games') })
   const tabs = useQuery({ queryKey: ['tabs'], queryFn: () => apiGet<Tab[]>('/api/tabs') })
@@ -194,6 +203,14 @@ export function LibraryPage() {
   })
 
   const toggleFavourite = (game: GameSummary) => favourite.mutate({ id: game.id, value: !game.favourite })
+
+  const dismissUpdate = useMutation({
+    mutationFn: (id: number) => apiSend<GameSummary>(`/api/games/${id}`, 'PATCH', { updated: false }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['games'] })
+      queryClient.invalidateQueries({ queryKey: ['game'] })
+    },
+  })
 
   useEffect(() => savePrefs(prefs), [prefs])
 
@@ -268,20 +285,16 @@ export function LibraryPage() {
         </div>
 
         <nav className="grid grid-cols-3 gap-1" aria-label="Main">
-          {NAV.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center gap-1 rounded py-2 text-xs',
-                  isActive ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white',
-                )
-              }
+          {NAV.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setPanel(key)}
+              className="flex flex-col items-center gap-1 rounded py-2 text-xs text-neutral-400 hover:bg-neutral-900 hover:text-white"
             >
               <Icon aria-hidden className="size-4" />
               {label}
-            </NavLink>
+            </button>
           ))}
         </nav>
 
@@ -349,13 +362,7 @@ export function LibraryPage() {
         <div className="flex flex-col gap-2">
           {visible.map((game) =>
             openId === game.id ? (
-              <ExpandedGame
-                key={game.id}
-                game={game}
-                onClose={() => collapse(game.id)}
-                onToggleFavourite={() => toggleFavourite(game)}
-                favouritePending={favourite.isPending}
-              />
+              <ExpandedGame key={game.id} game={game} onClose={() => collapse(game.id)} />
             ) : (
               <GameRow
                 key={game.id}
@@ -363,12 +370,18 @@ export function LibraryPage() {
                 tab={tabList.find((tab) => tab.id === game.tab)}
                 onOpen={() => setOpenId(game.id)}
                 onToggleFavourite={() => toggleFavourite(game)}
+                onDismissUpdate={() => dismissUpdate.mutate(game.id)}
                 favouritePending={favourite.isPending}
+                updatePending={dismissUpdate.isPending}
               />
             ),
           )}
         </div>
       </main>
+
+      {panel === 'import' && <ImportPage onClose={() => setPanel(null)} />}
+      {panel === 'account' && <AccountPage onClose={() => setPanel(null)} />}
+      {panel === 'settings' && <SettingsPage onClose={() => setPanel(null)} />}
     </div>
   )
 }

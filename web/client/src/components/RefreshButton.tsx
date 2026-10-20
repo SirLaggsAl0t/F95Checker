@@ -22,6 +22,14 @@ export function RefreshButton() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['refresh'] }),
   })
 
+  // Kick off a refresh once per page load, unless one is already running.
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (autoStarted.current || !status.data) return
+    autoStarted.current = true
+    if (status.data.state !== 'running') start.mutate()
+  }, [status.data, start])
+
   const wasRunning = useRef(false)
   const lastFinished = useRef<number | null>(null)
   useEffect(() => {

@@ -97,4 +97,25 @@ describe('LibraryPage inline details', () => {
     expect(screen.queryByText('A test game.')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Test Game/, expanded: true })).not.toBeInTheDocument()
   })
+
+  it('dismisses an update from the library row', async () => {
+    renderApp()
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark Test Game update as viewed' }))
+
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>
+    await vi.waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/games/1', expect.objectContaining({ method: 'PATCH' })),
+    )
+  })
+
+  it('marks an update as viewed', async () => {
+    renderApp()
+    fireEvent.click(await screen.findByText('Test Game'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark viewed' }))
+
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>
+    await vi.waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith('/api/games/1', expect.objectContaining({ method: 'PATCH' })),
+    )
+  })
 })
