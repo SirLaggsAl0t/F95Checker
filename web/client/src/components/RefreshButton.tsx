@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { RefreshCw } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { RefreshCw, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import { apiGet, apiSend } from '@/api/client'
-import type { RefreshStatus } from '@/api/types'
+import type { GameSummary, RefreshStatus } from '@/api/types'
 import { cn } from '@/lib/utils'
+
+type Toast = { count: number; names: string[] }
 
 export function RefreshButton() {
   const queryClient = useQueryClient()
+  const [toast, setToast] = useState<Toast | null>(null)
   const status = useQuery({
     queryKey: ['refresh'],
     queryFn: () => apiGet<RefreshStatus>('/api/refresh/status'),
@@ -26,15 +29,32 @@ export function RefreshButton() {
     if (!data) return
     const running = data.state === 'running'
     const finished = data.last_result?.finished_at ?? null
-    if ((wasRunning.current && !running) || (lastFinished.current !== null && finished !== lastFinished.current)) {
+    const newlyFinished = lastFinished.current !== null && finished !== lastFinished.current
+    if ((wasRunning.current && !running) || newlyFinished) {
       queryClient.invalidateQueries({ queryKey: ['games'] })
+    }
+    if (newlyFinished && !running) {
+      const updated = data.last_result?.updated ?? []
+      if (updated.length) {
+        const games = queryClient.getQueryData<GameSummary[]>(['games']) ?? []
+        const names = updated.map((id) => games.find((game) => game.id === id)?.name ?? `#${id}`)
+        setToast({ count: updated.length, names })
+      }
     }
     wasRunning.current = running
     lastFinished.current = finished
   }, [status.data, queryClient])
 
+  // The toast is a completion notice, not a log: dismiss it on its own.
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 8000)
+    return () => clearTimeout(timer)
+  }, [toast])
+
   const running = status.data?.state === 'running'
   const { progress = 0, total = 0, errors = [], missing_threads = [] } = status.data ?? {}
+  const lastRefresh = status.data?.last_successful_refresh
 
   return (
     <div className="flex flex-col items-end gap-1 text-right">
@@ -56,6 +76,9 @@ export function RefreshButton() {
           {progress}/{total}
         </span>
       )}
+      {!running && lastRefresh ? (
+        <span className="text-xs text-neutral-500">Last refresh: {new Date(lastRefresh * 1000).toLocaleString()}</span>
+      ) : null}
       {start.isError && <span className="text-xs text-red-400">{start.error.message}</span>}
       {!running && errors.length > 0 && (
         <ul className="max-w-64 space-y-0.5 text-xs text-red-400">
@@ -69,6 +92,30 @@ export function RefreshButton() {
       )}
       {!running && missing_threads.length > 0 && (
         <span className="text-xs text-amber-400">Missing threads: {missing_threads.join(', ')}</span>
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          className="fixed bottom-4 right-4 z-50 max-w-xs rounded border border-neutral-700 bg-neutral-900 p-3 text-left text-sm shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <span>
+              Refresh finished: {toast.count} game{toast.count === 1 ? '' : 's'} updated
+            </span>
+            <button type="button" aria-label="Dismiss" onClick={() => setToast(null)} className="text-neutral-400 hover:text-white">
+              <X aria-hidden className="size-4" />
+            </button>
+          </div>
+          <ul className="mt-1 space-y-0.5 text-xs text-neutral-300">
+            {toast.names.slice(0, 5).map((name, index) => (
+              <li key={`${name}-${index}`} className="truncate">
+                {name}
+              </li>
+            ))}
+            {toast.names.length > 5 && <li>and {toast.names.length - 5} more</li>}
+          </ul>
+        </div>
       )}
     </div>
   )

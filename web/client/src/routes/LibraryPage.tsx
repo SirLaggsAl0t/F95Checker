@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownUp, LayoutGrid, List } from 'lucide-react'
+import { ArrowDownUp, LayoutDashboard, LayoutGrid, List } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -8,6 +8,7 @@ import type { Enums, GameSummary, Label, Settings, Tab } from '@/api/types'
 import { AddGameBar } from '@/components/AddGameBar'
 import { CoverImage } from '@/components/CoverImage'
 import { FilterSidebar } from '@/components/FilterSidebar'
+import { KanbanBoard } from '@/components/KanbanBoard'
 import { LabelEditor } from '@/components/LabelEditor'
 import { Mdi } from '@/components/Mdi'
 import { RefreshButton } from '@/components/RefreshButton'
@@ -149,11 +150,17 @@ export function LibraryPage() {
           <h1 className="text-xl font-semibold">F95Checker</h1>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/timeline" className="text-sm text-neutral-400 hover:text-white">
+            Timeline
+          </Link>
           <Link to="/import" className="text-sm text-neutral-400 hover:text-white">
             Import
           </Link>
           <Link to="/account" className="text-sm text-neutral-400 hover:text-white">
             Account
+          </Link>
+          <Link to="/settings" className="text-sm text-neutral-400 hover:text-white">
+            Settings
           </Link>
           <RefreshButton />
         </div>
@@ -210,6 +217,15 @@ export function LibraryPage() {
           >
             <LayoutGrid aria-hidden className="size-4" />
           </button>
+          <button
+            type="button"
+            aria-label="Kanban view"
+            aria-pressed={prefs.view === 'kanban'}
+            onClick={() => update({ view: 'kanban' })}
+            className={cn('p-1.5', prefs.view === 'kanban' ? 'bg-neutral-800 text-white' : 'text-neutral-400')}
+          >
+            <LayoutDashboard aria-hidden className="size-4" />
+          </button>
         </div>
       </div>
 
@@ -230,7 +246,16 @@ export function LibraryPage() {
         <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">No games match these filters.</p>
       )}
 
-      {prefs.view === 'grid' ? (
+      {prefs.view === 'kanban' ? (
+        <KanbanBoard
+          games={visible}
+          group={prefs.group}
+          onGroupChange={(group) => update({ group })}
+          statuses={enums.data?.Status ?? []}
+          types={enums.data?.Type ?? []}
+          labels={labelList}
+        />
+      ) : prefs.view === 'grid' ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {visible.map((game) => (
             <GameCard key={game.id} game={game} />

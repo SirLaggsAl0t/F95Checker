@@ -1,6 +1,7 @@
 import type { GameSummary } from '@/api/types'
+import type { KanbanGroup } from '@/lib/kanban'
 
-export type ViewMode = 'list' | 'grid'
+export type ViewMode = 'list' | 'grid' | 'kanban'
 export type Tri = 'any' | 'yes' | 'no'
 export type ArchivedFilter = 'show' | 'hide' | 'only'
 export type SortKey = 'name' | 'developer' | 'added_on' | 'last_updated' | 'score' | 'rating' | 'votes'
@@ -19,6 +20,7 @@ export type Filters = {
 
 export type LibraryPrefs = {
   view: ViewMode
+  group: KanbanGroup
   sorts: Sort[]
   filters: Filters
 }
@@ -28,6 +30,7 @@ const STORAGE_KEY = 'f95checker.library'
 export function defaultPrefs(): LibraryPrefs {
   return {
     view: 'list',
+    group: 'status',
     sorts: [{ key: 'name', dir: 'asc' }],
     filters: {
       query: '',
@@ -110,7 +113,8 @@ export function loadPrefs(storage?: StorageLike): LibraryPrefs {
     const stored = JSON.parse(raw) as Partial<LibraryPrefs>
     const filters = { ...fallback.filters, ...(stored.filters ?? {}) }
     return {
-      view: stored.view === 'grid' ? 'grid' : 'list',
+      view: stored.view === 'grid' || stored.view === 'kanban' ? stored.view : 'list',
+      group: stored.group === 'type' || stored.group === 'label' ? stored.group : 'status',
       sorts: Array.isArray(stored.sorts) && stored.sorts.length && stored.sorts.every(isSort)
         ? stored.sorts
         : fallback.sorts,
