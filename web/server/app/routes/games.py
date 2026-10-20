@@ -85,25 +85,14 @@ async def list_games():
     return [game_summary(game) for game in games]
 
 
-@router.post("", status_code=201)
-async def add_games(payload: AddGamesRequest):
-    threads = []
-    if payload.url:
-        threads += utils.extract_thread_matches(payload.url)
-    if payload.id is not None:
-        threads.append(ThreadMatch(title="", id=payload.id))
-    for game_id in payload.ids or []:
-        threads.append(ThreadMatch(title="", id=game_id))
-    threads = [thread for thread in threads if thread.id > 0]
-    if not threads:
-        raise HTTPException(status_code=400, detail="No thread id found")
-
+async def add_games_by_threads(threads: list[ThreadMatch]):
+    """Add every thread not already in the library, then queue one refresh."""
     added = []
     skipped = []
     seen = set()
     for thread in threads:
         game_id = thread.id
-        if game_id in seen:
+        if game_id <= 0 or game_id in seen:
             continue
         seen.add(game_id)
         if game_id in globals.games:
@@ -120,6 +109,22 @@ async def add_games(payload: AddGamesRequest):
 
     if added:
         refresh_job.job.enqueue([game.id for game in added], full=True)
+    return added, skipped
+
+
+@router.post("", status_code=201)
+async def add_games(payload: AddGamesRequest):
+    threads = []
+    if payload.url:
+        threads += utils.extract_thread_matches(payload.url)
+    if payload.id is not None:
+        threads.append(ThreadMatch(title="", id=payload.id))
+    for game_id in payload.ids or []:
+        threads.append(ThreadMatch(title="", id=game_id))
+    if not any(thread.id > 0 for thread in threads):
+        raise HTTPException(status_code=400, detail="No thread id found")
+
+    added, skipped = await add_games_by_threads(threads)
     return {"added": [game_summary(game) for game in added], "skipped": skipped}
 
 
