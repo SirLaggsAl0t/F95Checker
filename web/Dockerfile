@@ -1,10 +1,11 @@
 # syntax=docker/dockerfile:1
 FROM node:22-alpine AS client
 WORKDIR /build
-COPY client/package.json client/package-lock.json ./
-RUN npm ci
+RUN npm install -g pnpm@12.14.0
+COPY client/package.json client/pnpm-lock.yaml client/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY client/ ./
-RUN npm run build
+RUN pnpm run build
 
 FROM python:3.12-slim
 WORKDIR /app

@@ -13,7 +13,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8642',
+      // Keep the browser's Host so the API's same-origin CSRF check passes.
+      '/api': { target: 'http://127.0.0.1:8642', changeOrigin: false },
     },
   },
   test: {
