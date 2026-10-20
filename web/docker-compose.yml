@@ -1,0 +1,16 @@
+services:
+  f95checker:
+    build:
+      context: .
+    ports:
+      - "8642:8642"
+    volumes:
+      - f95checker-data:/data
+    environment:
+      F95WEB_USERNAME: ${F95WEB_USERNAME:-}
+      F95WEB_PASSWORD: ${F95WEB_PASSWORD:-}
+      F95INDEXER_URL: ${F95INDEXER_URL:-}
+    restart: unless-stopped
+
+volumes:
+  f95checker-data:
