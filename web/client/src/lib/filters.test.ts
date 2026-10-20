@@ -100,7 +100,6 @@ describe('preferences', () => {
       setItem: (key: string, value: string) => void data.set(key, value),
     }
     const prefs = defaultPrefs()
-    prefs.view = 'grid'
     prefs.filters.query = 'test'
     savePrefs(prefs, storage)
     expect(loadPrefs(storage)).toEqual(prefs)

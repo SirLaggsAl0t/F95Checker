@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownUp, LayoutDashboard, LayoutGrid, List } from 'lucide-react'
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { ArrowDownUp, ChevronUp, LayoutGrid } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { apiGet } from '@/api/client'
@@ -8,7 +8,7 @@ import type { Enums, GameSummary, Label, Settings, Tab } from '@/api/types'
 import { AddGameBar } from '@/components/AddGameBar'
 import { CoverImage } from '@/components/CoverImage'
 import { FilterSidebar } from '@/components/FilterSidebar'
-import { KanbanBoard } from '@/components/KanbanBoard'
+import { GameDetail } from '@/components/GameDetail'
 import { LabelEditor } from '@/components/LabelEditor'
 import { Mdi } from '@/components/Mdi'
 import { RefreshButton } from '@/components/RefreshButton'
@@ -36,11 +36,13 @@ function GameBadges({ game }: { game: GameSummary }) {
   )
 }
 
-function GameRow({ game, tab }: { game: GameSummary; tab?: Tab }) {
+function GameRow({ game, tab, onOpen }: { game: GameSummary; tab?: Tab; onOpen: () => void }) {
   return (
-    <Link
-      to={`/games/${game.id}`}
-      className="flex gap-3 rounded-lg border border-neutral-800 bg-neutral-900/60 p-2 transition-colors hover:border-neutral-700 hover:bg-neutral-900 sm:gap-4 sm:p-3"
+    <button
+      type="button"
+      data-game-id={game.id}
+      onClick={onOpen}
+      className="flex w-full gap-3 rounded-lg border border-neutral-800 bg-neutral-900/60 p-2 text-left transition-colors hover:border-neutral-700 hover:bg-neutral-900 sm:gap-4 sm:p-3"
     >
       <CoverImage game={game} className="w-16 sm:w-20" />
       <div className="min-w-0 flex-1">
@@ -66,31 +68,32 @@ function GameRow({ game, tab }: { game: GameSummary; tab?: Tab }) {
           {game.last_updated ? <span className="text-xs text-neutral-500">Updated {formatDate(game.last_updated)}</span> : null}
         </div>
       </div>
-    </Link>
+    </button>
   )
 }
 
-function GameCard({ game }: { game: GameSummary }) {
+// Full-viewport detail. The title bar stays at the top and collapses the panel.
+function ExpandedGame({ game, onClose }: { game: GameSummary; onClose: () => void }) {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    ref.current?.scrollIntoView?.({ block: 'start' })
+  }, [])
+
   return (
-    <Link
-      to={`/games/${game.id}`}
-      className="flex flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/60 transition-colors hover:border-neutral-700 hover:bg-neutral-900"
-    >
-      <CoverImage game={game} className="w-full" />
-      <div className="flex min-w-0 flex-1 flex-col gap-1 p-2">
+    <article ref={ref} className="min-h-dvh rounded-lg border border-neutral-800 bg-neutral-900/60">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-expanded
+        className="sticky top-0 z-10 flex w-full items-center justify-between gap-2 border-b border-neutral-800 bg-neutral-900/95 px-3 py-2.5 text-left backdrop-blur hover:text-white"
+      >
         <h2 className="truncate font-medium">{game.name}</h2>
-        <p className="truncate text-xs text-neutral-400">
-          {game.developer || 'Unknown developer'} · {game.version || 'Unknown version'}
-        </p>
-        <div className="mt-auto flex flex-wrap items-center gap-1 pt-1">
-          <span className="flex items-center gap-1 text-xs" style={{ color: game.status?.color || undefined }}>
-            <Mdi name={game.status?.icon ?? ''} />
-          </span>
-          <GameBadges game={game} />
-          {game.rating ? <span className="ml-auto text-xs text-neutral-300">★{game.rating}</span> : null}
-        </div>
+        <ChevronUp aria-hidden className="size-4 shrink-0 text-neutral-400" />
+      </button>
+      <div className="mx-auto max-w-3xl p-4 sm:p-6">
+        <GameDetail id={game.id} showHeading={false} />
       </div>
-    </Link>
+    </article>
   )
 }
 
@@ -108,6 +111,7 @@ const SORTS: { value: SortKey; label: string }[] = [
 
 export function LibraryPage() {
   const [prefs, setPrefs] = useState<LibraryPrefs>(() => loadPrefs())
+  const [openId, setOpenId] = useState<number | null>(null)
 
   const games = useQuery({ queryKey: ['games'], queryFn: () => apiGet<GameSummary[]>('/api/games') })
   const tabs = useQuery({ queryKey: ['tabs'], queryFn: () => apiGet<Tab[]>('/api/tabs') })
@@ -130,6 +134,14 @@ export function LibraryPage() {
 
   const update = (patch: Partial<LibraryPrefs>) => setPrefs((current) => ({ ...current, ...patch }))
   const setFilters = (filters: LibraryPrefs['filters']) => update({ filters })
+
+  const collapse = (id: number) => {
+    setOpenId(null)
+    // Put the shrunken row back in view after the tall panel is gone.
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-game-id="${id}"]`)?.scrollIntoView({ block: 'center' })
+    })
+  }
 
   const tabList = tabs.data ?? []
   const labelList = labels.data ?? []
@@ -212,35 +224,6 @@ export function LibraryPage() {
         >
           {sort.dir === 'asc' ? 'Ascending' : 'Descending'}
         </button>
-        <div className="ml-auto flex rounded border border-neutral-700" role="group" aria-label="View mode">
-          <button
-            type="button"
-            aria-label="List view"
-            aria-pressed={prefs.view === 'list'}
-            onClick={() => update({ view: 'list' })}
-            className={cn('p-1.5', prefs.view === 'list' ? 'bg-neutral-800 text-white' : 'text-neutral-400')}
-          >
-            <List aria-hidden className="size-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Grid view"
-            aria-pressed={prefs.view === 'grid'}
-            onClick={() => update({ view: 'grid' })}
-            className={cn('p-1.5', prefs.view === 'grid' ? 'bg-neutral-800 text-white' : 'text-neutral-400')}
-          >
-            <LayoutGrid aria-hidden className="size-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Kanban view"
-            aria-pressed={prefs.view === 'kanban'}
-            onClick={() => update({ view: 'kanban' })}
-            className={cn('p-1.5', prefs.view === 'kanban' ? 'bg-neutral-800 text-white' : 'text-neutral-400')}
-          >
-            <LayoutDashboard aria-hidden className="size-4" />
-          </button>
-        </div>
       </div>
 
       <FilterSidebar
@@ -260,28 +243,20 @@ export function LibraryPage() {
         <p className="rounded border border-neutral-800 p-6 text-center text-neutral-400">No games match these filters.</p>
       )}
 
-      {prefs.view === 'kanban' ? (
-        <KanbanBoard
-          games={visible}
-          group={prefs.group}
-          onGroupChange={(group) => update({ group })}
-          statuses={enums.data?.Status ?? []}
-          types={enums.data?.Type ?? []}
-          labels={labelList}
-        />
-      ) : prefs.view === 'grid' ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-          {visible.map((game) => (
-            <GameCard key={game.id} game={game} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {visible.map((game) => (
-            <GameRow key={game.id} game={game} tab={tabList.find((tab) => tab.id === game.tab)} />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        {visible.map((game) =>
+          openId === game.id ? (
+            <ExpandedGame key={game.id} game={game} onClose={() => collapse(game.id)} />
+          ) : (
+            <GameRow
+              key={game.id}
+              game={game}
+              tab={tabList.find((tab) => tab.id === game.tab)}
+              onOpen={() => setOpenId(game.id)}
+            />
+          ),
+        )}
+      </div>
 
       <details className="mt-6 rounded border border-neutral-800">
         <summary className="cursor-pointer px-3 py-2 text-sm text-neutral-300">Organize tabs and labels</summary>
