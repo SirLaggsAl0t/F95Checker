@@ -52,6 +52,15 @@ export type TimelineEvent = {
   type: EnumItem
 }
 
+export type TimelineEntry = TimelineEvent & {
+  game_name: string
+}
+
+export type Preview = {
+  index: number
+  url: string
+}
+
 export type Download = {
   name: string
   links: { name: string; url: string }[]

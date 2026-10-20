@@ -7,6 +7,8 @@ import type { Enums, GameDetail, Label, Settings, Tab } from '@/api/types'
 import { CoverImage } from '@/components/CoverImage'
 import { GameEditPanel } from '@/components/GameEditPanel'
 import { Mdi } from '@/components/Mdi'
+import { PreviewGallery } from '@/components/PreviewGallery'
+import { TagHighlightChip } from '@/components/TagChip'
 import { formatDate, formatTimeline, isFinished, isInstalled, tagLabel } from '@/lib/format'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -54,6 +56,8 @@ export function GameDetailPage() {
 
   const game = query.data
   const tags = [...(game.tags ?? []).map(tagLabel), ...(game.unknown_tags ?? [])]
+  const hiddenEvents = new Set(settings.data?.hidden_timeline_events ?? [])
+  const timelineEvents = game.timeline_events.filter((event) => !hiddenEvents.has(event.type.value))
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -116,7 +120,10 @@ export function GameDetailPage() {
         <section className="mt-5">
           <h2 className="mb-1 font-medium">Tags</h2>
           <div className="flex flex-wrap gap-1">
-            {tags.map((tag, index) => (
+            {game.tags.map((tag) => (
+              <TagHighlightChip key={tag.value} tag={tag} settings={settings.data} enums={enums.data} />
+            ))}
+            {game.unknown_tags.map((tag, index) => (
               <span key={`${tag}-${index}`} className="rounded bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-300">
                 {tag}
               </span>
@@ -159,6 +166,8 @@ export function GameDetailPage() {
 
       <TextBlock title="Description" text={game.description} className="mt-5" />
 
+      <PreviewGallery gameId={game.id} enabled={settings.data?.previews_enabled ?? false} />
+
       <TextBlock title="Changelog" text={game.changelog} className="mt-5" />
 
       {game.reviews.length > 0 && (
@@ -183,11 +192,11 @@ export function GameDetailPage() {
         </section>
       )}
 
-      {game.timeline_events.length > 0 && (
+      {timelineEvents.length > 0 && (
         <section className="mt-5">
           <h2 className="mb-1 font-medium">Timeline</h2>
           <ul className="flex flex-col gap-1 text-sm">
-            {game.timeline_events.map((event, index) => (
+            {timelineEvents.map((event, index) => (
               <li key={`${event.timestamp}-${index}`} className="flex items-start gap-2">
                 <Mdi name={event.type.icon ?? ''} className="mt-0.5 size-4 shrink-0 text-neutral-400" />
                 <span className="flex-1 text-neutral-300">{formatTimeline(event)}</span>
