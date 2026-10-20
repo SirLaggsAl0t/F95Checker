@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowDownUp, LayoutDashboard, LayoutGrid, List } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { apiGet } from '@/api/client'
@@ -94,6 +94,9 @@ function GameCard({ game }: { game: GameSummary }) {
   )
 }
 
+// Module scope survives the unmount while a game detail page is open.
+let savedScroll = 0
+
 const SORTS: { value: SortKey; label: string }[] = [
   { value: 'name', label: 'Name' },
   { value: 'added_on', label: 'Added' },
@@ -113,6 +116,17 @@ export function LibraryPage() {
   const enums = useQuery({ queryKey: ['enums'], queryFn: () => apiGet<Enums>('/api/enums') })
 
   useEffect(() => savePrefs(prefs), [prefs])
+
+  useEffect(() => {
+    const onScroll = () => {
+      savedScroll = window.scrollY
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  useLayoutEffect(() => {
+    if (games.isSuccess) window.scrollTo(0, savedScroll)
+  }, [games.isSuccess])
 
   const update = (patch: Partial<LibraryPrefs>) => setPrefs((current) => ({ ...current, ...patch }))
   const setFilters = (filters: LibraryPrefs['filters']) => update({ filters })
