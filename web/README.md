@@ -105,8 +105,8 @@ Tab icons render the raw `Tab.icon` glyph with that font; enum icons use
 Views: list, grid and kanban (group by status, type or label; the card menu
 moves a game). Settings (`/settings`) covers refresh flags, previews, theme
 colours/presets, tag highlighting, hidden timeline event types and the proxy.
-The timeline page (`/timeline`) groups events by day. Background refresh runs
-through the same single-worker queue as manual refresh; `0` minutes disables it.
+Background refresh runs through the same single-worker queue as manual refresh;
+`0` minutes disables it.
 
 ## Tests
 

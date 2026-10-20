@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app import config
 from app.browser_login import browser_login
 from app.refresh_job import job
-from app.routes import account, enums, games, images, imports, labels_tabs, refresh, search, settings, timeline
+from app.routes import account, enums, games, images, imports, labels_tabs, refresh, search, settings
 from common.errors import Exc
 from modules import api, db
 
@@ -112,7 +112,6 @@ app.include_router(refresh.router)
 app.include_router(search.router)
 app.include_router(account.router)
 app.include_router(imports.router)
-app.include_router(timeline.router)
 
 
 def log_urls():
