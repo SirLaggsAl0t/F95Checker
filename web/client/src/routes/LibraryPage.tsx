@@ -63,7 +63,7 @@ function GameRow({ game, tab }: { game: GameSummary; tab?: Tab }) {
             {game.status?.name}
           </span>
           <GameBadges game={game} />
-          {game.added_on ? <span className="text-xs text-neutral-500">Added {formatDate(game.added_on)}</span> : null}
+          {game.last_updated ? <span className="text-xs text-neutral-500">Updated {formatDate(game.last_updated)}</span> : null}
         </div>
       </div>
     </Link>
