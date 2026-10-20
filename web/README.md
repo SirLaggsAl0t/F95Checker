@@ -26,6 +26,28 @@ neither).
 The web app uses its own data dir (`%APPDATA%/f95checker-web`,
 `~/.config/f95checker-web` or `~/Library/Application Support/f95checker-web`).
 
+## F95zone login
+
+F95zone sits behind Cloudflare, which challenges plain HTTP clients. The desktop
+app solves this by letting you log in inside its embedded browser; the web app
+does the same with a separate Edge window:
+
+1. Account page → **Open login window**.
+2. Solve the Cloudflare challenge and log in to F95zone in that window.
+3. The server grabs the cookies and the window's User-Agent as soon as the
+   `xf_user` cookie appears, and closes the window.
+
+The stored cookies can also be pasted by hand. When pasting, include the
+`User-Agent` header from the same browser: Cloudflare binds `cf_clearance` to it.
+
+The login window needs a desktop session on the server host with Microsoft Edge
+installed, so it is not available in Docker. Install the Playwright driver once
+with:
+
+```bash
+server/.venv/Scripts/python -m playwright install chromium
+```
+
 ## Sharing with the desktop app
 
 Do not point `F95CHECKER_DATA_DIR` at a live desktop data dir while the desktop

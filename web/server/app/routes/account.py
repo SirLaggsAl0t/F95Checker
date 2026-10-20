@@ -9,6 +9,7 @@ import time
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.browser_login import browser_login
 from modules import api, db, globals
 
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/api/account", tags=["account"])
 
 class CookiesPayload(BaseModel):
     cookies: str
+    user_agent: str | None = None
 
 
 @router.get("/status")
@@ -46,11 +48,18 @@ async def set_cookies(payload: CookiesPayload):
     if not cookies.get("xf_user"):
         raise HTTPException(status_code=400, detail="The cookie header must include xf_user")
 
+    # Cloudflare checks the UA against cf_clearance, so verify with the pasted one
+    previous_user_agent = api.webview_user_agent
+    if payload.user_agent is not None:
+        api.set_user_agent(payload.user_agent)
+
     await db.update_cookies(cookies)
     await db.save()
     if not await api.is_logged_in():
         await db.update_cookies({})
         await db.save()
+        if payload.user_agent is not None:
+            api.set_user_agent(previous_user_agent)
         raise HTTPException(status_code=401, detail="Those cookies did not log in to F95zone")
     return {"logged_in": True}
 
@@ -59,3 +68,14 @@ async def set_cookies(payload: CookiesPayload):
 async def clear_cookies():
     await db.update_cookies({})
     await db.save()
+    api.set_user_agent(None)
+
+
+@router.post("/browser-login")
+async def start_browser_login():
+    return browser_login.start()
+
+
+@router.get("/browser-login")
+async def browser_login_status():
+    return browser_login.status()

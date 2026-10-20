@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Bell, Mail, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { apiGet, apiSend } from '@/api/client'
-import type { AccountStatus, NotifCounts } from '@/api/types'
+import type { AccountStatus, BrowserLoginStatus, NotifCounts } from '@/api/types'
 import { formatDate } from '@/lib/format'
 
 export function AccountPage() {
   const queryClient = useQueryClient()
   const [text, setText] = useState('')
+  const [userAgent, setUserAgent] = useState('')
 
   const status = useQuery({
     queryKey: ['account'],
@@ -22,9 +23,14 @@ export function AccountPage() {
   })
 
   const save = useMutation({
-    mutationFn: (cookies: string) => apiSend<{ logged_in: boolean }>('/api/account/cookies', 'POST', { cookies }),
+    mutationFn: ({ cookies, userAgent }: { cookies: string; userAgent: string }) =>
+      apiSend<{ logged_in: boolean }>('/api/account/cookies', 'POST', {
+        cookies,
+        user_agent: userAgent.trim() || undefined,
+      }),
     onSuccess: () => {
       setText('')
+      setUserAgent('')
       queryClient.invalidateQueries({ queryKey: ['account'] })
       queryClient.invalidateQueries({ queryKey: ['notifs'] })
     },
@@ -37,6 +43,24 @@ export function AccountPage() {
       queryClient.invalidateQueries({ queryKey: ['account'] })
     },
   })
+
+  const browser = useQuery({
+    queryKey: ['browser-login'],
+    queryFn: () => apiGet<BrowserLoginStatus>('/api/account/browser-login'),
+    refetchInterval: (query) => (query.state.data?.state === 'running' ? 1000 : false),
+  })
+
+  const openBrowser = useMutation({
+    mutationFn: () => apiSend<BrowserLoginStatus>('/api/account/browser-login', 'POST'),
+    onSuccess: (data) => queryClient.setQueryData(['browser-login'], data),
+  })
+
+  useEffect(() => {
+    if (browser.data?.state === 'done') {
+      queryClient.invalidateQueries({ queryKey: ['account'] })
+      queryClient.invalidateQueries({ queryKey: ['notifs'] })
+    }
+  }, [browser.data?.state, queryClient])
 
   return (
     <main className="mx-auto max-w-2xl p-3 sm:p-6">
@@ -93,18 +117,42 @@ export function AccountPage() {
         </section>
       )}
 
+      <section className="mb-4 rounded border border-neutral-800 p-3">
+        <h2 className="mb-2 font-medium">Login window</h2>
+        <p className="mb-3 text-sm text-neutral-400">
+          Opens an Edge window on the server machine. Solve the Cloudflare challenge and log in there; the cookies and
+          User-Agent are saved automatically.
+        </p>
+        <button
+          type="button"
+          onClick={() => openBrowser.mutate()}
+          disabled={browser.data?.state === 'running' || openBrowser.isPending}
+          className="rounded border border-neutral-700 px-2.5 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800 disabled:text-neutral-500"
+        >
+          {browser.data?.state === 'running' ? 'Waiting for login…' : 'Open login window'}
+        </button>
+        {browser.data?.state === 'error' && (
+          <p className="mt-2 text-xs text-red-400">{browser.data.error}</p>
+        )}
+        {openBrowser.isError && <p className="mt-2 text-xs text-red-400">{openBrowser.error.message}</p>}
+      </section>
+
       <section className="rounded border border-neutral-800 p-3">
         <h2 className="mb-2 font-medium">Paste cookies</h2>
         <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-neutral-400">
           <li>Log in to f95zone.to in your browser.</li>
           <li>Open the developer tools → Network, then reload the page.</li>
           <li>Copy the whole <code>Cookie</code> request header of the document request.</li>
-          <li>Paste it below. It must contain the <code>xf_user</code> cookie.</li>
+          <li>
+            Copy that request's <code>User-Agent</code> header too. Cloudflare ties the <code>cf_clearance</code> cookie to
+            it, so a different UA gets challenged again.
+          </li>
+          <li>Paste both below. The cookies must contain the <code>xf_user</code> cookie.</li>
         </ol>
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            if (text.trim()) save.mutate(text.trim())
+            if (text.trim()) save.mutate({ cookies: text.trim(), userAgent })
           }}
         >
           <textarea
@@ -114,6 +162,13 @@ export function AccountPage() {
             rows={4}
             placeholder="xf_user=...; xf_session=...;"
             className="w-full rounded border border-neutral-700 bg-neutral-900 px-2.5 py-1.5 font-mono text-xs placeholder:text-neutral-600"
+          />
+          <input
+            value={userAgent}
+            onChange={(event) => setUserAgent(event.target.value)}
+            aria-label="User-Agent header"
+            placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ..."
+            className="mt-2 w-full rounded border border-neutral-700 bg-neutral-900 px-2.5 py-1.5 font-mono text-xs placeholder:text-neutral-600"
           />
           <button
             type="submit"

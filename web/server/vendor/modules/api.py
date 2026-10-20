@@ -128,8 +128,30 @@ updating = False
 session: aiohttp.ClientSession = None
 ssl_context: ssl.SSLContext = None
 # VENDORED: desktop reads this from the Qt webview module after browser login,
-# headless server has no webview so it stays None
+# headless server has no webview so it persists the UA pasted with the cookies.
+# Cloudflare's cf_clearance cookie is bound to the UA that solved the challenge.
 webview_user_agent: str = None
+
+
+def user_agent_path() -> pathlib.Path:
+    return globals.data_path / "browser-user-agent.txt"
+
+
+def load_user_agent():
+    global webview_user_agent
+    try:
+        webview_user_agent = user_agent_path().read_text("utf-8").strip() or None
+    except OSError:
+        webview_user_agent = None
+
+
+def set_user_agent(user_agent: str | None):
+    global webview_user_agent
+    webview_user_agent = (user_agent or "").strip() or None
+    if webview_user_agent:
+        user_agent_path().write_text(webview_user_agent, "utf-8")
+    else:
+        user_agent_path().unlink(missing_ok=True)
 temp_prefix = "F95Checker-Temp-"
 f95_ratelimit_forum = aiolimiter.AsyncLimiter(max_rate=1, time_period=2)
 f95_ratelimit_attachments = aiolimiter.AsyncLimiter(max_rate=2, time_period=1)
@@ -243,6 +265,7 @@ def setup():
         ssl_context = ssl.create_default_context()
 
     make_session()
+    load_user_agent()
 
     scan_loop = async_thread.run(missing_images_loop())
 
@@ -441,8 +464,8 @@ def raise_f95zone_error(res: bytes | dict, return_login=False):
                     MsgBox.error,
                     more=more
                 )
-            if errors := res.get("errors", []):
-                if "Cookies are required to use this site. You must accept them to continue using the site." in errors:
+            if errs := res.get("errors", []):
+                if "Cookies are required to use this site. You must accept them to continue using the site." in errs:
                     if return_login:
                         return False
                     raise errors.Exc(
@@ -454,7 +477,7 @@ def raise_f95zone_error(res: bytes | dict, return_login=False):
                 raise errors.Exc(
                     "API error",
                     "The F95zone API returned an 'error' status with the following messages:\n"
-                    " - " + "\n - ".join(errors),
+                    " - " + "\n - ".join(errs),
                     MsgBox.error,
                     more=more
                 )

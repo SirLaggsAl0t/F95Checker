@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from app import config
+from app.browser_login import browser_login
 from app.refresh_job import job
 from app.routes import account, enums, games, images, imports, labels_tabs, refresh, search, settings, timeline
 from common.errors import Exc
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
             yield
         finally:
             await job.stop()
+            await browser_login.stop()
             save_task.cancel()
     # api.setup() can't block on session close in inline mode, close it here
     if api.session and not api.session.closed:

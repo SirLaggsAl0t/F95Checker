@@ -154,6 +154,11 @@ export type AccountStatus = {
   has_cookies: boolean
 }
 
+export type BrowserLoginStatus = {
+  state: 'idle' | 'running' | 'done' | 'error'
+  error: string | null
+}
+
 export type NotifCounts = {
   alerts: number
   inbox: number
