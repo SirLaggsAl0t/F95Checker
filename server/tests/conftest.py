@@ -4,7 +4,7 @@ import sys
 import tempfile
 
 server_dir = pathlib.Path(__file__).resolve().parents[1]
-repo_root = server_dir.parents[1]
+repo_root = server_dir.parent
 
 # The server must only ever see the vendored packages. Running `python -m pytest`
 # from the repo root puts it on sys.path, and namespace packages would merge the

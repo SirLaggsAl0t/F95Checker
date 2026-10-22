@@ -11,10 +11,10 @@ import time
 import pytest
 
 server_dir = pathlib.Path(__file__).resolve().parents[1] / "server"
-repo_root = server_dir.parents[1]
+repo_root = server_dir.parent
 
-# Same isolation as web/server/tests/conftest.py: the server must only see the
-# vendored packages, never the desktop ones via the repo root on sys.path.
+# Same isolation as server/tests/conftest.py: the server must only see the
+# vendored packages, never whatever the repo root puts on sys.path.
 sys.path[:] = [p for p in sys.path if pathlib.Path(p or ".").resolve() != repo_root]
 sys.path.insert(0, str(server_dir))
 sys.path.insert(0, str(server_dir / "vendor"))
@@ -74,7 +74,7 @@ def _free_port() -> int:
 @pytest.fixture(scope="session")
 def server(network):
     if not (client_dist / "index.html").is_file():
-        pytest.skip("client not built: run `npm run build` in web/client")
+        pytest.skip("client not built: run `pnpm run build` in client")
     import uvicorn
 
     port = _free_port()

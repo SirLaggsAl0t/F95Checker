@@ -137,7 +137,7 @@ async def spa_fallback(path: str):
     if path == "api" or path.startswith("api/"):
         return JSONResponse({"detail": "Not Found"}, status_code=404)
     if not client_dist.is_dir():
-        return JSONResponse({"detail": "Client not built, run `npm run build` in web/client"}, status_code=404)
+        return JSONResponse({"detail": "Client not built, run `pnpm run build` in client"}, status_code=404)
     root = client_dist.resolve()
     file = client_dist / path
     try:
