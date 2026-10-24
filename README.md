@@ -70,9 +70,10 @@ cp .env.example .env    # set credentials before exposing the port
 docker compose up -d --build
 ```
 
-The compose file publishes `8642` and keeps the data in the `f95checker-data`
-volume, so restarts keep the library. The container listens on `0.0.0.0`; the
-optional credentials in `.env` decide whether the LAN needs Basic auth.
+The compose file publishes `F95WEB_PORT` (default `8642`) and keeps the data in
+the `f95checker-data` volume, so restarts keep the library. The container listens
+on `0.0.0.0`; the optional credentials in `.env` decide whether Basic auth is
+required.
 
 ## LAN access
 

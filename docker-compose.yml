@@ -3,11 +3,12 @@ services:
     build:
       context: .
     ports:
-      - "${CLIENT_PORT:-5173}:${CLIENT_PORT:-5173}"
+      - "${F95WEB_PORT:-8642}:${F95WEB_PORT:-8642}"
     volumes:
       - f95checker-data:/data
     environment:
-      CLIENT_PORT: ${CLIENT_PORT:-5173}
+      F95WEB_HOST: 0.0.0.0
+      F95WEB_PORT: ${F95WEB_PORT:-8642}
       F95WEB_USERNAME: ${F95WEB_USERNAME:-}
       F95WEB_PASSWORD: ${F95WEB_PASSWORD:-}
       F95INDEXER_URL: ${F95INDEXER_URL:-}
