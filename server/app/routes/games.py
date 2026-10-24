@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app import images, refresh_job
 from app.serialize import game_detail, game_summary
+from app.validate import bad_request
 from common.structs import Label, Status, Tab, ThreadMatch, Type
 from modules import db, globals, utils
 
@@ -22,19 +23,11 @@ class AddGamesRequest(BaseModel):
     ids: list[int] | None = None
 
 
-class ConvertRequest(BaseModel):
-    id: int
-
-
 def get_or_404(game_id: int):
     game = globals.games.get(game_id)
     if game is None:
         raise HTTPException(status_code=404, detail="Game not found")
     return game
-
-
-def bad_request(message: str):
-    raise HTTPException(status_code=400, detail=message)
 
 
 def validate_patch(payload: dict) -> dict:
@@ -126,27 +119,6 @@ async def add_games(payload: AddGamesRequest):
 
     added, skipped = await add_games_by_threads(threads)
     return {"added": [game_summary(game) for game in added], "skipped": skipped}
-
-
-@router.post("/custom", status_code=201)
-async def add_custom_game():
-    game_id = await db.create_game(custom=True)
-    await db.load_games(game_id)
-    await db.save()
-    return game_summary(globals.games[game_id])
-
-
-@router.post("/{game_id}/convert")
-async def convert_game(game_id: int, payload: ConvertRequest):
-    game = get_or_404(game_id)
-    if payload.id in globals.games:
-        raise HTTPException(status_code=409, detail="Game already in library")
-    await db.update_game_id(game, payload.id)
-    game.custom = False
-    game.status = Status.Unchecked
-    await db.update_game(game, "custom", "status")
-    await db.save()
-    return game_summary(game)
 
 
 @router.patch("/{game_id}")

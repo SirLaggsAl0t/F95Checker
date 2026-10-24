@@ -68,7 +68,6 @@ def test_search_marks_library_games(monkeypatch):
         "id": 920001,
         "title": "Found",
         "creator": "Dev",
-        "url": "https://f95zone.to/threads/1/",
         "in_list": False,
     }]
 

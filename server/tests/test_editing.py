@@ -130,7 +130,6 @@ def test_label_and_tab_delete_side_effects(monkeypatch):
             ordered = client.put("/api/labels/order", json={"ids": [two["id"], one["id"]]})
             assert ordered.status_code == 200, ordered.text
             assert [item["id"] for item in ordered.json()] == [two["id"], one["id"]]
-            assert [item["position"] for item in ordered.json()] == [0, 1]
 
             client.patch(f"/api/games/{game_id}", json={"labels": [one["id"], two["id"]], "tab": tab["id"]})
             assert client.get(f"/api/games/{game_id}").json()["labels"] == [two["id"], one["id"]]
@@ -150,26 +149,3 @@ def test_label_and_tab_delete_side_effects(monkeypatch):
                 client.delete(f"/api/labels/{item.id}")
             for item in list(Tab.instances):
                 client.delete(f"/api/tabs/{item.id}")
-
-
-def test_custom_game_can_be_renamed_and_converted(monkeypatch):
-    fake_refresh(monkeypatch)
-    with TestClient(app) as client:
-        created = client.post("/api/games/custom")
-        assert created.status_code == 201, created.text
-        game_id = created.json()["id"]
-        assert created.json()["custom"] is True
-
-        assert client.patch(f"/api/games/{game_id}", json={"name": "My mod"}).json()["name"] == "My mod"
-
-        new_id = 940004
-        converted = client.post(f"/api/games/{game_id}/convert", json={"id": new_id})
-        try:
-            assert converted.status_code == 200, converted.text
-            assert converted.json()["id"] == new_id
-            assert converted.json()["custom"] is False
-            assert client.get(f"/api/games/{game_id}").status_code == 404
-            assert client.get(f"/api/games/{new_id}").json()["name"] == "My mod"
-            assert row(new_id)["custom"] == 0
-        finally:
-            client.delete(f"/api/games/{new_id}")

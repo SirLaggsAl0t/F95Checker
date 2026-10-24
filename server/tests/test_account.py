@@ -53,7 +53,7 @@ def test_cookie_paste_verifies_and_persists(monkeypatch):
         assert res.status_code == 200
         assert globals.cookies == {"xf_user": "abc", "xf_session": "def"}
 
-        assert client.get("/api/account/status").json()["has_cookies"] is True
+        assert client.get("/api/account/status").json()["logged_in"] is True
 
         assert client.delete("/api/account/cookies").status_code == 204
         assert globals.cookies == {}
@@ -136,6 +136,6 @@ def test_account_status(monkeypatch):
         # db.load() repopulates globals.cookies on startup, so set it after.
         globals.cookies["xf_user"] = "abc"
         try:
-            assert client.get("/api/account/status").json() == {"logged_in": True, "has_cookies": True}
+            assert client.get("/api/account/status").json() == {"logged_in": True}
         finally:
             globals.cookies.pop("xf_user", None)

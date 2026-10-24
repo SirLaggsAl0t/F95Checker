@@ -7,7 +7,6 @@ from common.structs import Datestamp, Status, Tag, TimelineEvent, TimelineEventT
 def make_game():
     return types.SimpleNamespace(
         id=7,
-        custom=False,
         name="Test Game",
         version="1.2",
         developer="Dev",
@@ -16,7 +15,6 @@ def make_game():
         url="https://f95zone.to/threads/7",
         added_on=Datestamp(1_700_000_000),
         last_updated=Datestamp(1_700_000_100),
-        last_full_check=1_700_000_200,
         last_check_version="1.1",
         last_launched=Datestamp(0),
         playtime=1.0,
@@ -34,12 +32,9 @@ def make_game():
         changelog="changes",
         tags=(Tag["2d-game"], Tag.romance),
         unknown_tags=["mystery"],
-        unknown_tags_flag=True,
         labels=[types.SimpleNamespace(id=2), types.SimpleNamespace(id=1)],
         tab=types.SimpleNamespace(id=3),
         notes="note",
-        image_url="https://example.test/cover.png",
-        previews_urls=["https://example.test/a.png"],
         downloads=(("Mega", [("Mirror", "https://example.test/file")]), ("Bad", [("No url", "")])),
         reviews_total=1,
         reviews=[types.SimpleNamespace(user="u", score=5, message="m", likes=2, timestamp=1_700_000_300)],

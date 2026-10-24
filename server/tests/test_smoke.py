@@ -25,7 +25,7 @@ def test_enums():
         res = client.get("/api/enums")
         assert res.status_code == 200
         body = res.json()
-        assert {"DisplayMode", "Status", "Tag", "TimelineEventType", "Type", "FilterMode", "MsgBox"} <= body.keys()
+        assert {"Status", "Tag", "TimelineEventType", "Type", "ProxyType"} <= body.keys()
         assert body["Status"][0] == {"value": 1, "name": "Normal", "icon": "lightning_bolt_circle", "color": "#f2f2f2"}
 
 

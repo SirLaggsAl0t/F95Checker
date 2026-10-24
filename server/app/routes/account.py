@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.browser_login import browser_login
-from modules import api, db, globals
+from modules import api, db
 
 router = APIRouter(prefix="/api/account", tags=["account"])
 
@@ -24,7 +24,6 @@ class CookiesPayload(BaseModel):
 async def account_status():
     return {
         "logged_in": await api.is_logged_in(),
-        "has_cookies": bool(globals.cookies.get("xf_user")),
     }
 
 

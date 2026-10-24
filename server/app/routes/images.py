@@ -91,7 +91,6 @@ def _preview_file(game_id: int, digest: str):
 
 @router.get("/games/{game_id}/previews")
 async def previews(game_id: int):
-    # Phase 5 flag: routes exist now, the gallery UI comes later.
     if not globals.settings.previews_enabled:
         raise HTTPException(status_code=404, detail="Previews disabled")
     game = _get_game(game_id)

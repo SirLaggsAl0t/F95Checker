@@ -1,34 +1,11 @@
-import re
-
 from fastapi import APIRouter, HTTPException
 
 from app.serialize import label_json, tab_json
+from app.validate import bad_request, color_value, text_value
 from common.structs import Label, Tab
-from modules import colors, db, globals
+from modules import db, globals
 
 router = APIRouter(prefix="/api", tags=["labels_tabs"])
-
-HEX = re.compile(r"^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
-
-
-def bad_request(message: str):
-    raise HTTPException(status_code=400, detail=message)
-
-
-def color_value(key: str, value, nullable=False):
-    if value is None and nullable:
-        return None
-    if not isinstance(value, str) or not HEX.fullmatch(value):
-        bad_request(f"{key} must be a #rrggbb colour")
-    return colors.hex_to_rgba_0_1(value)
-
-
-def text_value(key: str, value, max_length=None):
-    if not isinstance(value, str):
-        bad_request(f"{key} must be a string")
-    if max_length is not None and len(value) > max_length:
-        bad_request(f"{key} is too long")
-    return value
 
 
 def name_changes(payload: dict, allowed: set[str], color_nullable=False) -> dict:
@@ -57,6 +34,30 @@ def ordered_instances(cls, ids: list[int]):
     return [cls.get(item) for item in ids]
 
 
+async def create_entity(create, update, json_fn, payload, allowed, color_nullable=False):
+    changes = name_changes(payload or {}, allowed, color_nullable)
+    entity = await create()
+    if changes:
+        for key, value in changes.items():
+            setattr(entity, key, value)
+        await update(entity, *changes)
+    await db.save()
+    return json_fn(entity)
+
+
+async def update_entity(cls, entity_id, payload, update, json_fn, allowed, color_nullable=False):
+    entity = cls.get(entity_id)
+    if entity is None:
+        raise HTTPException(status_code=404, detail=f"{cls.__name__} not found")
+    changes = name_changes(payload, allowed, color_nullable)
+    if changes:
+        for key, value in changes.items():
+            setattr(entity, key, value)
+        await update(entity, *changes)
+        await db.save()
+    return json_fn(entity)
+
+
 @router.get("/tabs")
 async def list_tabs():
     # Real tabs only; the client prepends the synthetic default tab.
@@ -70,28 +71,12 @@ async def list_labels():
 
 @router.post("/labels", status_code=201)
 async def create_label(payload: dict | None = None):
-    changes = name_changes(payload or {}, {"name", "color"})
-    label = await db.create_label()
-    for key, value in changes.items():
-        setattr(label, key, value)
-    if changes:
-        await db.update_label(label, *changes)
-    await db.save()
-    return label_json(label)
+    return await create_entity(db.create_label, db.update_label, label_json, payload, {"name", "color"})
 
 
 @router.patch("/labels/{label_id}")
 async def update_label(label_id: int, payload: dict):
-    label = Label.get(label_id)
-    if label is None:
-        raise HTTPException(status_code=404, detail="Label not found")
-    changes = name_changes(payload, {"name", "color"})
-    for key, value in changes.items():
-        setattr(label, key, value)
-    if changes:
-        await db.update_label(label, *changes)
-        await db.save()
-    return label_json(label)
+    return await update_entity(Label, label_id, payload, db.update_label, label_json, {"name", "color"})
 
 
 @router.delete("/labels/{label_id}", status_code=204)
@@ -117,28 +102,16 @@ async def order_labels(payload: dict):
 
 @router.post("/tabs", status_code=201)
 async def create_tab(payload: dict | None = None):
-    changes = name_changes(payload or {}, {"name", "icon", "color"}, color_nullable=True)
-    tab = await db.create_tab()
-    for key, value in changes.items():
-        setattr(tab, key, value)
-    if changes:
-        await db.update_tab(tab, *changes)
-    await db.save()
-    return tab_json(tab)
+    return await create_entity(
+        db.create_tab, db.update_tab, tab_json, payload, {"name", "icon", "color"}, color_nullable=True
+    )
 
 
 @router.patch("/tabs/{tab_id}")
 async def update_tab(tab_id: int, payload: dict):
-    tab = Tab.get(tab_id)
-    if tab is None:
-        raise HTTPException(status_code=404, detail="Tab not found")
-    changes = name_changes(payload, {"name", "icon", "color"}, color_nullable=True)
-    for key, value in changes.items():
-        setattr(tab, key, value)
-    if changes:
-        await db.update_tab(tab, *changes)
-        await db.save()
-    return tab_json(tab)
+    return await update_entity(
+        Tab, tab_id, payload, db.update_tab, tab_json, {"name", "icon", "color"}, color_nullable=True
+    )
 
 
 @router.delete("/tabs/{tab_id}", status_code=204)

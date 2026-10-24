@@ -5,9 +5,6 @@ hand-maintained enum copy on the client. Colours are converted from
 tuple[float] to CSS hex here, once.
 """
 from common.structs import (
-    DisplayMode,
-    FilterMode,
-    MsgBox,
     ProxyType,
     Status,
     Tag,
@@ -42,14 +39,11 @@ def enum_ref(value) -> dict:
 def all_enums() -> dict:
     result = {}
     for enum in (
-        DisplayMode,
         Status,
         Tag,
         TagHighlight,
         TimelineEventType,
         Type,
-        FilterMode,
-        MsgBox,
         ProxyType,
     ):
         result[enum.__name__] = [enum_ref(member) for member in enum]

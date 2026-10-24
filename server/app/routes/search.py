@@ -16,7 +16,6 @@ async def search(q: str, category: str = "games", search: str = "search", page: 
             "id": result.id,
             "title": result.title,
             "creator": result.creator,
-            "url": result.url,
             "in_list": result.id in globals.games,
         }
         for result in results

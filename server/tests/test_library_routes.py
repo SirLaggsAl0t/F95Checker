@@ -67,7 +67,7 @@ def test_game_detail_and_labels():
         tabs = client.get("/api/tabs").json()
         assert tabs[0]["name"] == "Main"
         labels = client.get("/api/labels").json()
-        assert labels[0] == {"id": 2, "name": "Favorite", "color": "#ff0000", "position": 0}
+        assert labels[0] == {"id": 2, "name": "Favorite", "color": "#ff0000"}
 
         detail = client.get("/api/games/5")
         assert detail.status_code == 200

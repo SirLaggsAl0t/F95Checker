@@ -746,9 +746,7 @@ async def import_url_shortcut(file: str | pathlib.Path) -> list[ThreadMatch]:
         return []
 
 
-async def import_browser_bookmarks(file: str | pathlib.Path) -> list[ThreadMatch]:
-    async with aiofiles.open(file, "rb") as f:
-        raw = await f.read()
+async def import_browser_bookmarks(raw: bytes | str) -> list[ThreadMatch]:
     html = parser.html(raw)
     threads = []
     for bookmark in html.find_all(lambda elem: "href" in getattr(elem, "attrs", "")):

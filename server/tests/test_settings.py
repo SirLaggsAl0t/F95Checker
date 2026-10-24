@@ -12,7 +12,6 @@ def test_settings_round_trip():
             "/api/settings",
             json={
                 "style_bg": "#112233",
-                "style_corner_radius": 8,
                 "previews_enabled": not before["previews_enabled"],
                 "bg_refresh_interval": 0,
                 "hidden_timeline_events": [1, 2],
@@ -22,7 +21,6 @@ def test_settings_round_trip():
         assert response.status_code == 200, response.text()
         data = response.json()
         assert data["style_bg"] == "#112233"
-        assert data["style_corner_radius"] == 8
         assert data["previews_enabled"] is (not before["previews_enabled"])
         assert data["bg_refresh_interval"] == 0
         assert data["hidden_timeline_events"] == [1, 2]

@@ -1,127 +1,105 @@
-import re
-
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.enums import color_hex
+from app.validate import bad_request, color_value
 from common.structs import ProxyType, Tag, TagHighlight, TimelineEventType
-from modules import api, colors, db, globals
+from modules import api, db, globals
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
-# Web-relevant subset only. Desktop-only fields stay server-side.
-KEYS = (
-    "refresh_archived_games",
-    "refresh_completed_games",
-    "check_notifs",
-    "max_connections",
-    "max_retries",
-    "request_timeout",
-    "image_timeout",
-    "previews_enabled",
-    "bg_refresh_interval",
-    "confirm_on_remove",
-    "mark_installed_after_add",
-    "default_tab_is_new",
-    "hidden_timeline_events",
-    "highlight_tags",
-    "tags_highlights",
-    "style_accent",
-    "style_alt_bg",
-    "style_bg",
-    "style_border",
-    "style_corner_radius",
-    "style_text",
-    "style_text_dim",
-    "proxy_type",
-    "proxy_host",
-    "proxy_port",
-    "insecure_ssl",
-)
 
-COLOR_KEYS = {"style_accent", "style_alt_bg", "style_bg", "style_border", "style_text", "style_text_dim"}
-BOOL_KEYS = {
-    "refresh_archived_games",
-    "refresh_completed_games",
-    "check_notifs",
-    "previews_enabled",
-    "confirm_on_remove",
-    "mark_installed_after_add",
-    "default_tab_is_new",
-    "highlight_tags",
-    "insecure_ssl",
+# Web-relevant subset only. Desktop-only fields stay server-side.
+def _bool(key, value):
+    if not isinstance(value, bool):
+        bad_request(f"{key} must be a boolean")
+    return value
+
+
+def _string(key, value):
+    if not isinstance(value, str):
+        bad_request(f"{key} must be a string")
+    return value
+
+
+def _integer(low: int, high: int):
+    def convert(key, value):
+        if type(value) is not int or not low <= value <= high:
+            bad_request(f"{key} must be an integer from {low} to {high}")
+        return value
+    return convert
+
+
+def _color(key, value):
+    return color_value(key, value, message=f"{key} must be a #rrggbb or #rrggbbaa colour")
+
+
+def _proxy_type(key, value):
+    try:
+        return ProxyType(value)
+    except (ValueError, TypeError):
+        bad_request("Unknown proxy_type")
+
+
+def _timeline_events(key, value):
+    if not isinstance(value, list):
+        bad_request("hidden_timeline_events must be a list")
+    try:
+        events = [TimelineEventType(item) for item in value]
+    except (ValueError, TypeError):
+        bad_request("Unknown timeline event type")
+    return sorted(set(events), key=int)
+
+
+def _tag_highlights(key, value):
+    if not isinstance(value, dict):
+        bad_request("tags_highlights must be an object")
+    try:
+        return {
+            Tag(int(tag)): TagHighlight(int(highlight))
+            for tag, highlight in value.items()
+        }
+    except (ValueError, TypeError):
+        bad_request("Unknown tag or tag highlight")
+
+
+CONVERTERS = {
+    "refresh_archived_games": _bool,
+    "refresh_completed_games": _bool,
+    "check_notifs": _bool,
+    "max_connections": _integer(1, 64),
+    "max_retries": _integer(0, 20),
+    "request_timeout": _integer(1, 300),
+    "image_timeout": _integer(1, 300),
+    "previews_enabled": _bool,
+    "bg_refresh_interval": _integer(0, 1440),
+    "confirm_on_remove": _bool,
+    "mark_installed_after_add": _bool,
+    "default_tab_is_new": _bool,
+    "hidden_timeline_events": _timeline_events,
+    "highlight_tags": _bool,
+    "tags_highlights": _tag_highlights,
+    "style_bg": _color,
+    "style_text": _color,
+    "proxy_type": _proxy_type,
+    "proxy_host": _string,
+    "proxy_port": _integer(0, 65535),
+    "insecure_ssl": _bool,
 }
-INT_RANGES = {
-    "max_connections": (1, 64),
-    "max_retries": (0, 20),
-    "request_timeout": (1, 300),
-    "image_timeout": (1, 300),
-    "bg_refresh_interval": (0, 1440),
-    "style_corner_radius": (0, 40),
-    "proxy_port": (0, 65535),
-}
-PROXY_KEYS = {"proxy_type", "proxy_host", "proxy_port"}
-HEX_COLOR = re.compile(r"^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
+KEYS = tuple(CONVERTERS)
 
 
 def _value(key):
     value = getattr(globals.settings, key)
-    if key in COLOR_KEYS:
+    converter = CONVERTERS[key]
+    if converter is _color:
         return color_hex(value)
-    if key == "hidden_timeline_events":
+    if converter is _timeline_events:
         return [int(item) for item in value]
-    if key == "tags_highlights":
+    if converter is _tag_highlights:
         return {int(tag): int(highlight) for tag, highlight in value.items()}
-    if key == "proxy_type":
+    if converter is _proxy_type:
         return int(value)
     return value
-
-
-def _bad(message: str):
-    raise HTTPException(status_code=400, detail=message)
-
-
-def _convert(key, value):
-    if key in COLOR_KEYS:
-        if not isinstance(value, str) or not HEX_COLOR.match(value):
-            _bad(f"{key} must be a #rrggbb or #rrggbbaa colour")
-        return colors.hex_to_rgba_0_1(value.lower())
-    if key in BOOL_KEYS:
-        if not isinstance(value, bool):
-            _bad(f"{key} must be a boolean")
-        return value
-    if key in INT_RANGES:
-        low, high = INT_RANGES[key]
-        if type(value) is not int or not low <= value <= high:
-            _bad(f"{key} must be an integer from {low} to {high}")
-        return value
-    if key == "proxy_type":
-        try:
-            return ProxyType(value)
-        except (ValueError, TypeError):
-            _bad("Unknown proxy_type")
-    if key == "proxy_host":
-        if not isinstance(value, str):
-            _bad("proxy_host must be a string")
-        return value
-    if key == "hidden_timeline_events":
-        if not isinstance(value, list):
-            _bad("hidden_timeline_events must be a list")
-        try:
-            events = [TimelineEventType(item) for item in value]
-        except (ValueError, TypeError):
-            _bad("Unknown timeline event type")
-        return sorted(set(events), key=int)
-    if key == "tags_highlights":
-        if not isinstance(value, dict):
-            _bad("tags_highlights must be an object")
-        try:
-            return {
-                Tag(int(tag)): TagHighlight(int(highlight))
-                for tag, highlight in value.items()
-            }
-        except (ValueError, TypeError):
-            _bad("Unknown tag or tag highlight")
-    _bad(f"Unknown setting: {key}")
 
 
 @router.get("")
@@ -133,14 +111,14 @@ async def get_settings():
 async def update_settings(payload: dict):
     unknown = set(payload) - set(KEYS)
     if unknown:
-        _bad(f"Unknown setting(s): {', '.join(sorted(unknown))}")
+        bad_request(f"Unknown setting(s): {', '.join(sorted(unknown))}")
 
-    changes = {key: _convert(key, value) for key, value in payload.items()}
+    changes = {key: CONVERTERS[key](key, value) for key, value in payload.items()}
     for key, value in changes.items():
         setattr(globals.settings, key, value)
     if changes:
         await db.update_settings(*changes)
         await db.save()
-    if PROXY_KEYS & set(changes):
+    if "proxy_type" in changes or "proxy_host" in changes or "proxy_port" in changes:
         api.make_session()
     return {key: _value(key) for key in KEYS}

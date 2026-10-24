@@ -1,7 +1,4 @@
 """Import games from pasted threads, bookmarks HTML, or F95zone bookmarks/watched."""
-import pathlib
-import tempfile
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -39,14 +36,7 @@ async def import_threads(payload: ThreadsImport):
 
 @router.post("/bookmarks")
 async def import_bookmarks(payload: BookmarksImport):
-    # The vendored helper reads a bookmarks export file; feed it a temp copy.
-    with tempfile.NamedTemporaryFile("w", suffix=".html", encoding="utf-8", delete=False) as file:
-        file.write(payload.html)
-        path = pathlib.Path(file.name)
-    try:
-        threads = await api.import_browser_bookmarks(path)
-    finally:
-        path.unlink(missing_ok=True)
+    threads = await api.import_browser_bookmarks(payload.html)
     if not threads:
         raise HTTPException(status_code=400, detail="No thread links found")
     return await _import(threads)
