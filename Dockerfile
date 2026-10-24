@@ -11,7 +11,8 @@ FROM python:3.12-slim
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     F95CHECKER_DATA_DIR=/data \
-    CLIENT_PORT=5173
+    CLIENT_PORT=5173 \
+    F95BROWSER_LOGIN=0
 
 COPY server/requirements.txt server/requirements.txt
 # libstdc++6: the node binary copied below links it and the slim base may not ship it

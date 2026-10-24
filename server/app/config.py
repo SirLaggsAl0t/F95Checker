@@ -16,6 +16,9 @@ if bool(USERNAME) != bool(PASSWORD):
 # Dev autoreload
 RELOAD = os.environ.get("F95WEB_RELOAD", "") not in ("", "0", "false")
 
+# Browser login opens a real window; it needs a desktop, so it is off in the container
+BROWSER_LOGIN = os.environ.get("F95BROWSER_LOGIN", "") not in ("0", "false")
+
 # Web-owned data dir, outside the repo: db.connect() rejects a DB inside self_path.
 # Must be set before importing the vendored modules/globals.py.
 if sys.platform.startswith("win"):

@@ -10,6 +10,7 @@ so the Turnstile challenge never passes.
 import asyncio
 import time
 
+from app import config
 from modules import api, db, globals
 
 LOGIN_URL = "https://f95zone.to/login/"
@@ -22,14 +23,17 @@ BROWSER_CHANNEL = "msedge"  # Edge is preinstalled on Windows
 
 class BrowserLogin:
     def __init__(self):
-        self.state = "idle"  # idle | running | done | error
-        self.error: str | None = None
+        # A window needs a desktop; the container has none, so say so up front
+        self.state = "error" if not config.BROWSER_LOGIN else "idle"
+        self.error = "Browser login needs a desktop, use Paste cookies on this deployment" if not config.BROWSER_LOGIN else None
         self._task: asyncio.Task | None = None
 
     def status(self) -> dict:
         return {"state": self.state, "error": self.error}
 
     def start(self) -> dict:
+        if not config.BROWSER_LOGIN:
+            return self.status()
         if self.state != "running":
             self.state = "running"
             self.error = None
