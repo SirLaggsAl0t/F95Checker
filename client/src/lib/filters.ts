@@ -1,4 +1,5 @@
 import type { GameSummary } from '@/api/types'
+import { isTrue } from '@/lib/format'
 
 export type Tri = 'any' | 'yes' | 'no'
 export type ArchivedFilter = 'show' | 'hide' | 'only'
@@ -42,7 +43,7 @@ export function defaultPrefs(): LibraryPrefs {
 
 function triMatches(value: string, want: Tri): boolean {
   if (want === 'any') return true
-  if (want === 'yes') return value === 'True'
+  if (want === 'yes') return isTrue(value)
   return value === 'False'
 }
 

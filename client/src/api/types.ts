@@ -11,7 +11,6 @@ export type EnumItem = {
 
 export type GameSummary = {
   id: number
-  custom: boolean
   name: string
   version: string
   developer: string
@@ -30,11 +29,9 @@ export type GameSummary = {
   favourite: boolean
   labels: number[]
   tab: number | null
-  image_url: string
   image_version: string
   tags: EnumItem[]
   unknown_tags: string[]
-  unknown_tags_flag: boolean
   has_image: boolean
 }
 
@@ -70,10 +67,8 @@ export type GameDetail = GameSummary & {
   downloads: Download[]
   reviews_total: number
   reviews: Review[]
-  previews_urls: string[]
   timeline_events: TimelineEvent[]
   last_check_version: string
-  last_full_check: number
 }
 
 export type Tab = {
@@ -81,14 +76,12 @@ export type Tab = {
   name: string
   icon: string
   color: string | null
-  position: number
 }
 
 export type Label = {
   id: number
   name: string
   color: string
-  position: number
 }
 
 export type Settings = {
@@ -107,13 +100,8 @@ export type Settings = {
   hidden_timeline_events: number[]
   highlight_tags: boolean
   tags_highlights: Record<string, number>
-  style_accent: string
-  style_alt_bg: string
   style_bg: string
-  style_border: string
-  style_corner_radius: number
   style_text: string
-  style_text_dim: string
   proxy_type: number
   proxy_host: string
   proxy_port: number
@@ -142,13 +130,11 @@ export type SearchResult = {
   id: number
   title: string
   creator: string
-  url: string
   in_list: boolean
 }
 
 export type AccountStatus = {
   logged_in: boolean
-  has_cookies: boolean
 }
 
 export type BrowserLoginStatus = {

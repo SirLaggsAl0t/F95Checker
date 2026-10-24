@@ -104,9 +104,10 @@ Brand assets and the MDI webfont live in `client/public/`.
 Tab icons render the raw `Tab.icon` glyph with that font; enum icons use
 `@mdi/js` paths directly (`components/Mdi.tsx`).
 
-Views: list, grid and kanban (group by status, type or label; the card menu
-moves a game). Settings (`/settings`) covers refresh flags, previews, theme
-colours/presets, tag highlighting, hidden timeline event types and the proxy.
+Views: a single sortable list with tab, status, type, label, installed, finished
+and archived filters. Settings (`/settings`) covers refresh flags, previews,
+background and text colours, tag highlighting, hidden timeline event types and
+the proxy.
 Background refresh runs through the same single-worker queue as manual refresh;
 `0` minutes disables it.
 

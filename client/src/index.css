@@ -17,12 +17,7 @@
 :root {
   color-scheme: dark;
   --bg: #0a0a0a;
-  --alt-bg: #171717;
-  --border: #2e2e2e;
   --text: #f2f2f2;
-  --text-dim: #a3a3a3;
-  --accent: #38bdf8;
-  --radius: 6px;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;

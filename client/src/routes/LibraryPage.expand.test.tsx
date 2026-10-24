@@ -7,7 +7,6 @@ import { LibraryPage } from './LibraryPage'
 
 const game = {
   id: 1,
-  custom: false,
   name: 'Test Game',
   version: '1.0',
   developer: 'Dev',
@@ -26,11 +25,9 @@ const game = {
   favourite: true,
   labels: [],
   tab: null,
-  image_url: '',
   image_version: '',
   tags: [],
   unknown_tags: [],
-  unknown_tags_flag: false,
   has_image: false,
 }
 
@@ -41,10 +38,8 @@ const detail = {
   changelog: '',
   reviews_total: 0,
   reviews: [],
-  previews_urls: [],
   timeline_events: [],
   last_check_version: '',
-  last_full_check: 0,
   downloads: [],
 }
 

@@ -13,7 +13,6 @@ import {
 function game(overrides: Partial<GameSummary> = {}): GameSummary {
   return {
     id: 1,
-    custom: false,
     name: 'Game',
     version: '1.0',
     developer: 'Dev',
@@ -32,11 +31,9 @@ function game(overrides: Partial<GameSummary> = {}): GameSummary {
     favourite: false,
     labels: [],
     tab: null,
-    image_url: '',
     image_version: '',
     tags: [],
     unknown_tags: [],
-    unknown_tags_flag: false,
     has_image: false,
     ...overrides,
   }

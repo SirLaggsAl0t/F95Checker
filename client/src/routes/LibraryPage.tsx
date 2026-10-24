@@ -24,7 +24,7 @@ import { RefreshButton } from '@/components/RefreshButton'
 import { TabIcon } from '@/components/TabIcon'
 import type { LibraryPrefs, SortKey, TabFilter } from '@/lib/filters'
 import { applyFilters, applySorts, loadPrefs, savePrefs } from '@/lib/filters'
-import { formatDate, isFinished, isInstalled } from '@/lib/format'
+import { formatDate, isTrue } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { AccountPage } from '@/routes/AccountPage'
 import { ImportPage } from '@/routes/ImportPage'
@@ -39,8 +39,8 @@ function Badge({ children, className }: { children: React.ReactNode; className?:
 function GameBadges({ game }: { game: GameSummary }) {
   return (
     <>
-      {isInstalled(game.installed) && <Badge className="bg-emerald-900/60 text-emerald-300">Installed</Badge>}
-      {isFinished(game.finished) && <Badge className="bg-sky-900/60 text-sky-300">Finished</Badge>}
+      {isTrue(game.installed) && <Badge className="bg-emerald-900/60 text-emerald-300">Installed</Badge>}
+      {isTrue(game.finished) && <Badge className="bg-sky-900/60 text-sky-300">Finished</Badge>}
       {game.archived && <Badge className="bg-neutral-800 text-neutral-400">Archived</Badge>}
     </>
   )

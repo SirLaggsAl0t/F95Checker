@@ -2,14 +2,11 @@ import {
   mdiAccount,
   mdiAlertCircle,
   mdiAlertDecagram,
-  mdiAlertOctagon,
-  mdiAlertRhombus,
   mdiCheckboxMarkedCircle,
   mdiCloseCircle,
   mdiDotsHorizontalCircle,
   mdiDownload,
   mdiFlagCheckered,
-  mdiInformation,
   mdiLightningBolt,
   mdiLightningBoltCircle,
   mdiPauseCircle,
@@ -23,20 +20,14 @@ import {
   mdiThumbDown,
   mdiThumbUp,
   mdiTimerSync,
-  mdiViewAgendaOutline,
-  mdiViewGridOutline,
-  mdiViewWeekOutline,
 } from '@mdi/js'
 import { Heart } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-// Names come from the vendored enums (DisplayMode, Status, TimelineEventType,
-// MsgBox). Only these paths are bundled; anything else falls back to a heart.
+// Names come from the vendored enums (Status, TimelineEventType). Only these
+// paths are bundled; anything else falls back to a heart.
 const paths: Record<string, string> = {
-  view_agenda_outline: mdiViewAgendaOutline,
-  view_grid_outline: mdiViewGridOutline,
-  view_week_outline: mdiViewWeekOutline,
   lightning_bolt_circle: mdiLightningBoltCircle,
   checkbox_marked_circle: mdiCheckboxMarkedCircle,
   pause_circle: mdiPauseCircle,
@@ -58,9 +49,6 @@ const paths: Record<string, string> = {
   thumb_down: mdiThumbDown,
   timer_sync: mdiTimerSync,
   reload_alert: mdiReloadAlert,
-  information: mdiInformation,
-  alert_rhombus: mdiAlertRhombus,
-  alert_octagon: mdiAlertOctagon,
 }
 
 export function iconPath(name: string): string | undefined {

@@ -9,7 +9,7 @@ import { Mdi } from '@/components/Mdi'
 import { PreviewGallery } from '@/components/PreviewGallery'
 import { TagHighlightChip } from '@/components/TagChip'
 import { parseChangelog } from '@/lib/changelog'
-import { formatDate, formatTimeline, isFinished, isInstalled, tagLabel } from '@/lib/format'
+import { formatDate, formatTimeline, isTrue, tagLabel } from '@/lib/format'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -72,8 +72,8 @@ export function GameDetail({ id, showHeading = true }: { id: number; showHeading
               <Mdi name={game.status?.icon ?? ''} />
               {game.status?.name}
             </span>
-            {isInstalled(game.installed) && <span className="text-xs text-emerald-300">Installed</span>}
-            {isFinished(game.finished) && <span className="text-xs text-sky-300">Finished</span>}
+            {isTrue(game.installed) && <span className="text-xs text-emerald-300">Installed</span>}
+            {isTrue(game.finished) && <span className="text-xs text-sky-300">Finished</span>}
             {game.updated && (
               <span className="inline-flex items-center gap-1.5 text-xs text-amber-300">
                 Update available

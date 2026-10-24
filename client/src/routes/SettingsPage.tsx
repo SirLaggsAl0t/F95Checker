@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiGet, apiSend } from '@/api/client'
 import type { Enums, GameSummary, Settings } from '@/api/types'
 import { Panel } from '@/components/Panel'
-import { THEME_PRESETS } from '@/lib/theme'
 
 function Toggle({
   label,
@@ -125,27 +124,11 @@ export function SettingsPage({ onClose }: { onClose?: () => void } = {}) {
 
         <section className="rounded border border-neutral-800 p-3">
           <h2 className="mb-2 font-medium">Appearance</h2>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {THEME_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => setForm((current) => (current ? { ...current, ...preset.style } : current))}
-                className="rounded border border-neutral-700 px-2.5 py-1 text-sm hover:bg-neutral-800"
-              >
-                {preset.name}
-              </button>
-            ))}
-          </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {(
               [
                 ['style_bg', 'Background'],
-                ['style_alt_bg', 'Alternate background'],
-                ['style_border', 'Border'],
                 ['style_text', 'Text'],
-                ['style_text_dim', 'Dim text'],
-                ['style_accent', 'Accent'],
               ] as const
             ).map(([key, label]) => (
               <label key={key} className="flex items-center justify-between gap-2 text-sm">
@@ -159,18 +142,6 @@ export function SettingsPage({ onClose }: { onClose?: () => void } = {}) {
                 />
               </label>
             ))}
-            <label className="flex items-center justify-between gap-2 text-sm">
-              Corner radius
-              <input
-                type="number"
-                min={0}
-                max={40}
-                value={form.style_corner_radius}
-                onChange={(event) => set('style_corner_radius', Number(event.target.value))}
-                aria-label="Corner radius"
-                className="w-20 rounded border border-neutral-700 bg-neutral-900 px-1.5 py-1"
-              />
-            </label>
           </div>
         </section>
 

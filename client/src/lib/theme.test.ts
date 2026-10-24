@@ -14,17 +14,11 @@ describe('applyTheme', () => {
     applyTheme(
       {
         style_bg: '#112233',
-        style_accent: '',
         style_text: '#ffffff',
-        style_corner_radius: 8,
-        style_border: undefined as unknown as string,
       },
       element,
     )
     expect(values.get('--bg')).toBe('#112233')
     expect(values.get('--text')).toBe('#ffffff')
-    expect(values.get('--radius')).toBe('8px')
-    expect(values.has('--accent')).toBe(false)
-    expect(values.has('--border')).toBe(false)
   })
 })

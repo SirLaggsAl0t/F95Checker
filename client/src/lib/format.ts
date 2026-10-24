@@ -31,10 +31,6 @@ export function hueFor(name: string): number {
   return hash
 }
 
-export function isInstalled(value: string): boolean {
-  return value === 'True'
-}
-
-export function isFinished(value: string): boolean {
+export function isTrue(value: string): boolean {
   return value === 'True'
 }
