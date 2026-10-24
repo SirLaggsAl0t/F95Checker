@@ -772,7 +772,7 @@ async def import_f95_bookmarks() -> list[ThreadMatch]:
             break
         page += 1
         for title in bookmarks.find_all(parser.is_class("structItem-title")):
-            threads += utils.extract_thread_matches(title.get("uix-data-href"))
+            threads += utils.extract_thread_matches(title.get("uix-href") or title.get("uix-data-href"))
     return threads
 
 
@@ -792,7 +792,7 @@ async def import_f95_watched_threads() -> list[ThreadMatch]:
             break
         page += 1
         for title in watched.find_all(parser.is_class("structItem-title")):
-            threads += utils.extract_thread_matches(title.get("uix-data-href"))
+            threads += utils.extract_thread_matches(title.get("uix-href") or title.get("uix-data-href"))
     return threads
 
 
