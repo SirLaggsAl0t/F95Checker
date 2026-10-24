@@ -16,7 +16,6 @@ client/node_modules
 client/dist
 e2e
 README.md
-CHANGELOG.md
 LICENSE
 Dockerfile
 .dockerignore
